@@ -5,17 +5,24 @@
    ===================================================================== */
 
 :root {
-  /* Paleta do Instituto Federal do Rio Grande do Sul (verde e vermelho da marca) */
-  --tinta:       #0D220C;
-  --tinta-2:     #143313;
-  --quadra:      #3F9D3B;
-  --quadra-claro:#E7F5E6;
-  --placar:      #E04549;
-  --fundo:       #F4F6F8;
-  --linha:       #DDE3EA;
-  --texto:       #2A3543;
-  --suave:       #6B7A8D;
-  --perigo:      #8E1B1F;
+  /* Paleta oficial da marca do Instituto Federal (Manual de Uso da Marca):
+     vermelho Pantone 485 C / #DA291C e verde Pantone 376 C / #84BD00.
+     --quadra-viva e --placar sao o verde e o vermelho oficiais, usados em
+     elementos decorativos (a marca, selos com texto escuro). O verde oficial
+     puro tem contraste baixo demais contra fundo claro para texto e botoes
+     (~2.3:1, abaixo do minimo de acessibilidade), entao --quadra e uma versao
+     mais escura da mesma matiz, usada em links, botoes e textos. */
+  --tinta:        #14210A;
+  --tinta-2:      #1C2E0E;
+  --quadra:       #567B00;
+  --quadra-viva:  #84BD00;
+  --quadra-claro: #F0F7E0;
+  --placar:       #DA291C;
+  --fundo:        #F4F6F8;
+  --linha:        #DDE3EA;
+  --texto:        #2A3543;
+  --suave:        #6B7A8D;
+  --perigo:       #A6121A;
 
   --bs-primary: var(--quadra);
   --raio: 10px;
@@ -58,8 +65,18 @@ h2 { font-size: 1.5rem; }
   text-transform: uppercase;
   color: #fff;
   font-size: 1.35rem;
+  line-height: 1.1;
 }
-.topo .navbar-brand span { color: var(--placar); }
+.topo .navbar-brand .marca-texto > span { color: var(--placar); }
+.topo .navbar-brand small {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  letter-spacing: .03em;
+  text-transform: none;
+  font-size: .62rem;
+  color: var(--quadra-viva);
+}
 .topo .nav-link { color: #C7D2DE; font-weight: 500; }
 .topo .nav-link:hover, .topo .nav-link.ativo { color: #fff; }
 

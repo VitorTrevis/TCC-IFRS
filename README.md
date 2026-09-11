@@ -264,6 +264,26 @@ dessincronizada do placar.
 
 ---
 
+## Identidade visual
+
+A paleta e a marca seguem o **Manual de Uso da Marca dos Institutos
+Federais**: vermelho Pantone 485 C (`#DA291C`) e verde Pantone 376 C
+(`#84BD00`). O verde oficial puro tem contraste baixo demais contra fundo
+claro para texto e botões (~2,3:1, abaixo do mínimo de acessibilidade), então
+`--quadra` (usada em links, botões e destaques de texto) é uma versão mais
+escura da mesma matiz (`#567B00`, ~5:1 de contraste); `--quadra-viva` guarda o
+verde oficial para uso decorativo (a marca em si, selos com texto escuro).
+Variáveis em [`frontend/public/css/estilo.css`](frontend/public/css/estilo.css).
+
+O símbolo (círculo vermelho + quadrados verdes) é um SVG próprio em
+[`frontend/public/img/ifrs-marca.svg`](frontend/public/img/ifrs-marca.svg),
+reconstruído a partir do grid de construção oficial do manual — não é uma
+imagem baixada de terceiros. Usado como favicon em todas as páginas e ao lado
+do nome do sistema na barra superior (`montarTopo()` em
+[`frontend/public/js/ui.js`](frontend/public/js/ui.js)).
+
+---
+
 ## Arquitetura
 
 Cliente-servidor em três camadas:
@@ -298,10 +318,12 @@ Persistência    SQLite via better-sqlite3, com schema relacional e chaves estra
 /frontend
   /public
     /css/estilo.css
+    /img/ifrs-marca.svg   marca do IF (favicon e barra superior)
     /js             api.js, ui.js e um script por página
     index.html            lista de campeonatos
     login.html            entrada (aluno ou coordenação)
     confirmar-email.html  confirma a conta a partir do link recebido por e-mail
+    redefinir-senha.html  define nova senha a partir do link de "esqueci minha senha"
     painel-aluno.html     painel do aluno com estatísticas pessoais
     admin-campeonato.html painel do organizador
     alunos-admin.html     lista de alunos e pré-cadastro manual (exceção)
