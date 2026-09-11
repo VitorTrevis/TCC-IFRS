@@ -12,8 +12,8 @@
      puro tem contraste baixo demais contra fundo claro para texto e botoes
      (~2.3:1, abaixo do minimo de acessibilidade), entao --quadra e uma versao
      mais escura da mesma matiz, usada em links, botoes e textos. */
-  --tinta:        #14210A;
-  --tinta-2:      #1C2E0E;
+  --tinta:        #1B3A16;
+  --tinta-2:      #234A1E;
   --quadra:       #567B00;
   --quadra-viva:  #84BD00;
   --quadra-claro: #F0F7E0;
@@ -79,6 +79,12 @@ h2 { font-size: 1.5rem; }
 }
 .topo .nav-link { color: #C7D2DE; font-weight: 500; }
 .topo .nav-link:hover, .topo .nav-link.ativo { color: #fff; }
+.topo .navbar-toggler-icon {
+  /* O icone padrao do Bootstrap usa tracos pretos translucidos, pensados
+     para fundo claro - ficam invisiveis no cabecalho escuro. Versao em
+     branco, mesmo SVG do Bootstrap so trocando a cor do traco. */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
 
 /* ---------- cartoes ---------- */
 .cartao {
