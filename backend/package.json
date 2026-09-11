@@ -1,0 +1,28 @@
+{
+  "name": "campeonatos-escolares-backend",
+  "version": "1.0.0",
+  "description": "API do sistema de organizacao de campeonatos esportivos escolares",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/db/seed.js",
+    "reset": "node -e \"require('fs').rmSync('campeonatos.db',{force:true})\" && npm run seed",
+    "gerar-banco-vercel": "node scripts/gerar-banco-vercel.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.0.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

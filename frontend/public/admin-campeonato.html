@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <title>Painel do campeonato</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="css/estilo.css" rel="stylesheet">
+</head>
+<body>
+  <div id="topo"></div>
+
+  <main class="container py-4">
+    <div id="cabecalho" class="mb-4"></div>
+
+    <div class="row g-4">
+      <!-- Times e elencos -->
+      <div class="col-lg-5">
+        <section class="cartao">
+          <div class="cartao-cabecalho">
+            <h2 class="h6 mb-0">Times</h2>
+            <span class="sobrancelha" id="contagem-times"></span>
+          </div>
+          <div class="cartao-corpo">
+            <div class="input-group mb-3">
+              <input class="form-control" id="novo-time" placeholder="Nome do time (ex: 3B Informatica)"
+                     aria-label="Nome do time">
+              <button class="btn btn-primary" id="btn-add-time">Adicionar</button>
+            </div>
+            <div id="lista-times"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Jogos -->
+      <div class="col-lg-7">
+        <section class="cartao mb-4">
+          <div class="cartao-cabecalho">
+            <h2 class="h6 mb-0">Tabela de jogos</h2>
+            <button class="btn btn-sm btn-primary" id="btn-gerar">Gerar tabela de jogos</button>
+          </div>
+          <div class="cartao-corpo" id="lista-partidas"></div>
+        </section>
+
+        <section class="cartao mb-4 d-none" id="secao-chave">
+          <div class="cartao-cabecalho"><h2 class="h6 mb-0">Chave eliminatoria</h2></div>
+          <div class="cartao-corpo" id="chave"></div>
+        </section>
+
+        <section class="cartao">
+          <div class="cartao-cabecalho"><h2 class="h6 mb-0">Classificacao</h2></div>
+          <div class="cartao-corpo" id="classificacao"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal: lancar placar -->
+  <div class="modal fade" id="modal-placar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-placar">Lancar placar</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body" id="corpo-placar"></div>
+        <div class="modal-footer justify-content-between">
+          <button class="btn btn-outline-danger btn-sm d-none" id="btn-apagar-placar">Apagar resultado</button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-primary" id="btn-salvar-placar">Salvar placar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: elenco do time -->
+  <div class="modal fade" id="modal-elenco" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h5" id="titulo-elenco">Elenco</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-2 mb-2">
+            <div class="col-8">
+              <input class="form-control" id="novo-jogador" placeholder="Nome do jogador" aria-label="Nome do jogador">
+            </div>
+            <div class="col-4">
+              <input class="form-control" id="novo-numero" type="number" min="0" max="999"
+                     placeholder="No" aria-label="Numero da camisa">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-8">
+              <input class="form-control" id="novo-aluno" list="lista-alunos-cadastrados"
+                     placeholder="Vincular a um aluno (opcional)" aria-label="Vincular a um aluno">
+              <datalist id="lista-alunos-cadastrados"></datalist>
+              <div class="form-text">Deixe em branco para nao vincular. Se digitar um nome que ainda nao existe, um pre-cadastro e criado na hora.</div>
+            </div>
+            <div class="col-4 d-flex align-items-start">
+              <button class="btn btn-primary w-100" id="btn-add-jogador">Adicionar</button>
+            </div>
+          </div>
+          <div id="lista-jogadores"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

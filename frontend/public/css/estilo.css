@@ -1,0 +1,286 @@
+/* =====================================================================
+   Campeonatos Escolares - tema visual
+   Referencia: placar de ginasio. Tipografia condensada, verde de quadra,
+   ambar so nos numeros do placar.
+   ===================================================================== */
+
+:root {
+  /* Paleta do Instituto Federal do Rio Grande do Sul (verde e vermelho da marca) */
+  --tinta:       #0D220C;
+  --tinta-2:     #143313;
+  --quadra:      #3F9D3B;
+  --quadra-claro:#E7F5E6;
+  --placar:      #E04549;
+  --fundo:       #F4F6F8;
+  --linha:       #DDE3EA;
+  --texto:       #2A3543;
+  --suave:       #6B7A8D;
+  --perigo:      #8E1B1F;
+
+  --bs-primary: var(--quadra);
+  --raio: 10px;
+}
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: .95rem;
+}
+
+h1, h2, h3, h4, .condensada {
+  font-family: 'Barlow Condensed', 'Inter', sans-serif;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: var(--tinta);
+}
+
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); text-transform: uppercase; }
+h2 { font-size: 1.5rem; }
+
+.sobrancelha {
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--suave);
+}
+
+/* ---------- topo ---------- */
+.topo {
+  background: var(--tinta);
+  border-bottom: 3px solid var(--placar);
+}
+.topo .navbar-brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #fff;
+  font-size: 1.35rem;
+}
+.topo .navbar-brand span { color: var(--placar); }
+.topo .nav-link { color: #C7D2DE; font-weight: 500; }
+.topo .nav-link:hover, .topo .nav-link.ativo { color: #fff; }
+
+/* ---------- cartoes ---------- */
+.cartao {
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+}
+.cartao-cabecalho {
+  padding: .85rem 1.1rem;
+  border-bottom: 1px solid var(--linha);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+.cartao-corpo { padding: 1.1rem; }
+
+.cartao-campeonato {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-left: 5px solid var(--quadra);
+  border-radius: var(--raio);
+  padding: 1.1rem 1.2rem;
+  height: 100%;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.cartao-campeonato:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(22, 32, 46, .1);
+  color: inherit;
+}
+.cartao-campeonato h3 { margin: .35rem 0 .5rem; }
+
+/* ---------- etiquetas de status ---------- */
+.etiqueta {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .2rem .55rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.etiqueta-planejado    { color: var(--suave); }
+.etiqueta-em_andamento { color: var(--quadra); background: var(--quadra-claro); border-color: transparent; }
+.etiqueta-finalizado   { color: #7A5C00; background: #FCF0D5; border-color: transparent; }
+
+/* ---------- placar (elemento assinatura) ---------- */
+.jogo {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: .5rem;
+  padding: .7rem .4rem;
+  border-bottom: 1px solid var(--linha);
+}
+.jogo:last-child { border-bottom: 0; }
+
+.jogo-time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--tinta);
+}
+.jogo-time.casa      { text-align: right; }
+.jogo-time.visitante { text-align: left; }
+.jogo-time.indefinido { color: var(--suave); font-style: italic; font-weight: 500; }
+.jogo-time.vencedor::after {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  margin-left: .35rem;
+  border-radius: 50%;
+  background: var(--placar);
+  vertical-align: middle;
+}
+
+.chip-placar {
+  background: var(--tinta);
+  color: #fff;
+  border-radius: 6px;
+  padding: .2rem .55rem;
+  min-width: 68px;
+  text-align: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: .06em;
+  font-variant-numeric: tabular-nums;
+}
+.chip-placar.aberto {
+  background: #fff;
+  border: 1px dashed var(--linha);
+  color: var(--suave);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  padding: .45rem .55rem;
+}
+.chip-placar .penaltis {
+  display: block;
+  font-size: .62rem;
+  letter-spacing: .06em;
+  color: var(--placar);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+}
+.jogo-marcadores {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: .74rem;
+  color: var(--suave);
+  margin-top: .3rem;
+}
+
+/* ---------- tabela de classificacao ---------- */
+.tabela-classificacao { width: 100%; border-collapse: collapse; }
+.tabela-classificacao th {
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--suave);
+  font-weight: 600;
+  padding: .5rem .35rem;
+  border-bottom: 2px solid var(--linha);
+  text-align: center;
+}
+.tabela-classificacao th:nth-child(2) { text-align: left; }
+.tabela-classificacao td {
+  padding: .55rem .35rem;
+  border-bottom: 1px solid var(--linha);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.tabela-classificacao td:nth-child(2) { text-align: left; font-weight: 500; }
+.tabela-classificacao td.destaque { font-weight: 700; color: var(--tinta); }
+.tabela-classificacao tbody tr:hover { background: #FAFBFC; }
+
+.posicao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  background: #EEF1F5;
+  color: var(--tinta);
+}
+.posicao.classificado { background: var(--quadra); color: #fff; }
+
+/* ---------- chave eliminatoria ---------- */
+.chave { display: flex; gap: 1.25rem; overflow-x: auto; padding-bottom: .5rem; }
+.chave-coluna { min-width: 210px; flex: 1 0 210px; }
+.chave-coluna > .sobrancelha { margin-bottom: .5rem; }
+.chave-jogo {
+  background: #fff;
+  border: 1px solid var(--linha);
+  border-radius: 8px;
+  padding: .5rem .6rem;
+  margin-bottom: .6rem;
+}
+.chave-lado {
+  display: flex; justify-content: space-between; gap: .5rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.02rem;
+  padding: .15rem 0;
+}
+.chave-lado + .chave-lado { border-top: 1px solid var(--linha); }
+.chave-lado.vencedor { font-weight: 700; color: var(--quadra); }
+.chave-lado.indefinido { color: var(--suave); font-style: italic; }
+.chave-lado b { font-variant-numeric: tabular-nums; }
+
+/* ---------- diversos ---------- */
+.btn-primary {
+  background: var(--quadra); border-color: var(--quadra);
+  font-weight: 600;
+}
+.btn-primary:hover, .btn-primary:focus { background: #2F752C; border-color: #2F752C; }
+.btn-outline-primary { color: var(--quadra); border-color: var(--quadra); }
+.btn-outline-primary:hover { background: var(--quadra); border-color: var(--quadra); }
+
+a { color: var(--quadra); }
+
+.vazio {
+  text-align: center;
+  padding: 2.2rem 1rem;
+  color: var(--suave);
+  border: 1px dashed var(--linha);
+  border-radius: var(--raio);
+  background: #fff;
+}
+.vazio strong { display: block; color: var(--tinta); margin-bottom: .3rem; font-size: 1.05rem; }
+
+.nav-tabs .nav-link {
+  color: var(--suave); font-weight: 600; border: 0; border-bottom: 3px solid transparent;
+}
+.nav-tabs .nav-link.active {
+  color: var(--tinta); background: transparent; border-bottom-color: var(--placar);
+}
+
+.rodape { color: var(--suave); font-size: .8rem; padding: 2rem 0 1.5rem; }
+
+#avisos { position: fixed; top: 1rem; right: 1rem; z-index: 1080; max-width: 330px; }
+
+:focus-visible { outline: 3px solid var(--placar); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+@media (max-width: 575.98px) {
+  .jogo { grid-template-columns: 1fr auto 1fr; gap: .35rem; }
+  .jogo-time { font-size: 1rem; }
+  .chip-placar { min-width: 58px; font-size: 1.2rem; }
+}
