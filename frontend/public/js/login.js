@@ -15,16 +15,18 @@ function mostrar(idParaMostrar) {
   });
 }
 
-/** Passos dentro do cartao do aluno (e-mail): entrar, cadastro, confirmacao enviada, reenviar. */
+const PASSOS_EMAIL = ['passo-entrar-email', 'passo-cadastro', 'passo-cadastro-enviado', 'passo-reenviar', 'passo-esqueci-senha'];
+
+/** Passos dentro do cartao do aluno (e-mail): entrar, cadastro, confirmacao enviada, reenviar, esqueci-senha. */
 function mostrarPassoEmail(passo) {
-  ['passo-entrar-email', 'passo-cadastro', 'passo-cadastro-enviado', 'passo-reenviar'].forEach((id) => {
+  PASSOS_EMAIL.forEach((id) => {
     document.getElementById(id).classList.toggle('d-none', id !== passo);
   });
   document.getElementById('cartao-fluxo-manual').classList.add('d-none');
 }
 
 function mostrarFluxoManual() {
-  ['passo-entrar-email', 'passo-cadastro', 'passo-cadastro-enviado', 'passo-reenviar'].forEach((id) => {
+  PASSOS_EMAIL.forEach((id) => {
     document.getElementById(id).classList.add('d-none');
   });
   document.getElementById('cartao-fluxo-manual').classList.remove('d-none');
@@ -53,6 +55,9 @@ document.getElementById('link-ir-entrar').onclick = () => { mostrarPassoEmail('p
 document.getElementById('link-ir-reenviar').onclick = () => { mostrarPassoEmail('passo-reenviar'); document.getElementById('r-email').focus(); };
 document.getElementById('link-voltar-de-reenviar').onclick = () => mostrarPassoEmail('passo-entrar-email');
 document.getElementById('link-reenviar-apos-cadastro').onclick = () => { mostrarPassoEmail('passo-reenviar'); document.getElementById('r-email').focus(); };
+
+document.getElementById('link-ir-esqueci-senha').onclick = () => { mostrarPassoEmail('passo-esqueci-senha'); document.getElementById('f-email').focus(); };
+document.getElementById('link-voltar-de-esqueci-senha').onclick = () => mostrarPassoEmail('passo-entrar-email');
 
 document.getElementById('link-fluxo-manual').onclick = () => {
   mostrarFluxoManual();
@@ -108,6 +113,21 @@ async function reenviarConfirmacao() {
   }
 }
 document.getElementById('btn-reenviar').onclick = reenviarConfirmacao;
+
+// ------------------------------------------------------ esqueci minha senha
+
+async function esqueciSenha() {
+  const email = document.getElementById('f-email').value.trim();
+  if (!email) { avisar('Informe o e-mail.', 'erro'); return; }
+  try {
+    const r = await api.esqueciSenha(email);
+    avisar(r.mensagem, 'sucesso');
+  } catch (e) {
+    avisar(e.message, 'erro');
+  }
+}
+document.getElementById('btn-esqueci-senha').onclick = esqueciSenha;
+document.getElementById('f-email').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') esqueciSenha(); });
 
 // ------------------------------------------------- fluxo manual (sem e-mail)
 

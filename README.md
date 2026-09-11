@@ -219,6 +219,12 @@ Se o link não chegar (spam, digitou o e-mail errado), tem um "Reenviar
 confirmação" na tela de login. Por segurança, esse link expira depois de 24h e
 só pode ser usado uma vez; pedir um novo invalida o anterior.
 
+**Esqueci minha senha:** na tela de login, "Esqueceu a senha?" pede o e-mail
+institucional e manda um link de redefinição, válido por 1h e de uso único
+(mesmo mecanismo de segurança do link de confirmação — veja "Token de
+redefinição" em Decisões de projeto). Clicar no link leva a uma tela para
+escolher a nova senha, e já loga o aluno direto no painel.
+
 ### Aluno — pré-cadastro manual (exceção, sem e-mail institucional)
 
 Para os casos em que a coordenação já sabe quem é o aluno mas ele não tem (ou
@@ -320,6 +326,8 @@ Tudo em `/api`. Erros voltam sempre como `{ "erro": "mensagem clara" }`.
 | POST | `/api/alunos/cadastro` | Autocadastro. Corpo `{ nome, email, senha, confirmar_senha }`. E-mail precisa terminar no domínio institucional |
 | GET | `/api/alunos/confirmar-email?token=` | Confirma a conta e já devolve o login (token + dados do aluno) |
 | POST | `/api/alunos/reenviar-confirmacao` | Corpo `{ email }`. Sempre responde a mesma mensagem, exista ou não a conta |
+| POST | `/api/alunos/esqueci-senha` | Corpo `{ email }`. Manda link de redefinição (1h, uso único). Mesma mensagem sempre, exista ou não a conta |
+| POST | `/api/alunos/redefinir-senha` | Corpo `{ token, senha, confirmar_senha }`. Define a nova senha e já devolve o login (token + dados do aluno) |
 | GET | `/api/alunos/buscar?nome=` | Busca pública de pré-cadastros manuais (nunca devolve senha) |
 | POST | `/api/alunos/:id/definir-senha` | Primeiro acesso do pré-cadastro manual. Uso único por aluno |
 | POST | `/api/alunos/login` | Corpo `{ email, senha }` (autocadastro) ou `{ id/nome, senha }` (pré-cadastro manual) |
@@ -329,8 +337,9 @@ Tudo em `/api`. Erros voltam sempre como `{ "erro": "mensagem clara" }`.
 | POST | `/api/alunos/:id/resetar-senha` | Zera a senha; aluno define uma nova em "Fui cadastrado pela coordenação" (admin) |
 
 O login do admin tem limite de 8 tentativas por minuto por IP. O cadastro de
-aluno tem limite de 5/min e o reenvio de confirmação, 3/min — os três
-independentes entre si, para dificultar força bruta e spam de e-mail.
+aluno tem limite de 5/min, e o reenvio de confirmação e o pedido de
+redefinição de senha, 3/min cada — os quatro independentes entre si, para
+dificultar força bruta e spam de e-mail.
 
 Tokens de admin e de aluno **não são intercambiáveis**: uma rota de admin recusa
 token de aluno (403) e vice-versa.
@@ -419,7 +428,8 @@ Pontos que fogem do óbvio:
   valores distintos, então vários pré-cadastros sem e-mail convivem sem conflito.
 - **`alunos.token_verificacao` nunca guarda o token em si, só o hash dele** (SHA-256).
   Mesmo com acesso de leitura ao banco, não dá para forjar um link de confirmação
-  válido — o mesmo princípio usado para `senha_hash`.
+  válido — o mesmo princípio usado para `senha_hash`. `token_reset_senha` (par de
+  colunas independente, usado em "esqueci minha senha") segue a mesma regra.
 - **Não existe tabela de coordenadores.** O admin é uma senha única em variável de
   ambiente, sem conta individual.
 - Todas as chaves estrangeiras têm índice, e `ON DELETE CASCADE` onde faz sentido:
@@ -469,6 +479,16 @@ diferente para "e-mail não existe" vs. "e-mail existe, mandei de novo", esse en
 viraria uma forma de descobrir quais e-mails têm conta no sistema. A resposta genérica
 fecha esse vazamento.
 
+**Token de redefinição de senha segue o mesmo padrão do token de confirmação**
+(aleatório, só o hash SHA-256 é gravado, uso único, resposta genérica em
+"esqueci minha senha" independente de o e-mail existir) — mesma lógica, mesmo
+motivo, ver os dois itens acima. A única diferença deliberada é a validade: 1h
+em vez de 24h, porque o pedido de redefinição é tipicamente usado na hora,
+diferente da confirmação de cadastro (que a pessoa pode deixar para depois). O
+mesmo clique que prova posse do e-mail também é aproveitado para marcar a
+conta como verificada, cobrindo o caso raro de alguém pedir redefinição antes
+de ter confirmado o cadastro original.
+
 **Aluno se identifica por nome, não por CPF ou matrícula.** CPF é dado sensível sob a
 LGPD e não traz ganho aqui: quem se cadastra prova a identidade pelo e-mail
 institucional (ou, no caminho de exceção, pelo reconhecimento direto da coordenação).
@@ -502,10 +522,11 @@ o resultado de trás para frente.
   os e-mails. Se essa conta for desativada ou a senha de app expirar, o cadastro de
   novos alunos para de funcionar até alguém corrigir a credencial — o login de quem
   já tem conta continua normal.
-- Não existe "esqueci minha senha" self-service para quem se cadastrou por e-mail —
-  depende da coordenação resetar, e o aluno redefine pelo caminho do pré-cadastro
-  manual (busca por nome). Um fluxo de recuperação por e-mail é uma extensão natural
-  se isso virar fricção real.
+- "Esqueci minha senha" (self-service, por e-mail) só existe para contas de
+  autocadastro. Quem foi pré-cadastrado manualmente pela coordenação (sem e-mail)
+  continua dependendo do reset feito por ela, redefinindo depois pelo caminho
+  "Fui cadastrado pela coordenação" (busca por nome) — não há e-mail para mandar
+  link nesse caso.
 - Um aluno pode, em tese, ter duas contas (uma manual antiga + uma nova por e-mail)
   se a coordenação já tinha cadastrado o nome dele manualmente antes do autocadastro
   existir. O sistema não faz fusão automática dessas contas.

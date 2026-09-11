@@ -53,6 +53,9 @@
 
           <div class="d-flex justify-content-between mt-3 small">
             <button type="button" class="btn btn-sm btn-link px-0 text-decoration-none" id="link-ir-cadastro">Criar conta</button>
+            <button type="button" class="btn btn-sm btn-link px-0 text-decoration-none" id="link-ir-esqueci-senha">Esqueceu a senha?</button>
+          </div>
+          <div class="mt-1 small">
             <button type="button" class="btn btn-sm btn-link px-0 text-decoration-none" id="link-ir-reenviar">Nao recebeu o e-mail de confirmacao?</button>
           </div>
         </div>
@@ -100,6 +103,17 @@
           </div>
           <button class="btn btn-primary w-100" id="btn-reenviar">Reenviar link</button>
           <button type="button" class="btn btn-sm btn-link px-0 mt-3 text-decoration-none" id="link-voltar-de-reenviar">Voltar</button>
+        </div>
+
+        <!-- Esqueci minha senha -->
+        <div class="d-none" id="passo-esqueci-senha">
+          <h2 class="h5 mb-3">Esqueci minha senha</h2>
+          <div class="mb-3">
+            <label class="form-label" for="f-email">Seu e-mail institucional</label>
+            <input class="form-control" id="f-email" type="email" autocomplete="email">
+          </div>
+          <button class="btn btn-primary w-100" id="btn-esqueci-senha">Enviar link de redefinicao</button>
+          <button type="button" class="btn btn-sm btn-link px-0 mt-3 text-decoration-none" id="link-voltar-de-esqueci-senha">Voltar</button>
         </div>
 
         <hr class="my-4">

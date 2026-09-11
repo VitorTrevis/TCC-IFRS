@@ -39,10 +39,25 @@ const db = new Database(ARQUIVO_DB);
 db.pragma('foreign_keys = ON');
 db.pragma('journal_mode = WAL');
 
+/** Adiciona colunas novas a tabelas ja existentes (o schema.sql so cria tabelas
+ *  que ainda nao existem, entao bancos criados antes de uma coluna nova nascer
+ *  nao a recebem automaticamente). Cada entrada e idempotente: so roda o ALTER
+ *  se a coluna ainda nao existir. */
+function migrar() {
+  const colunasAlunos = db.prepare("PRAGMA table_info(alunos)").all().map((c) => c.name);
+  if (!colunasAlunos.includes('token_reset_senha')) {
+    db.exec('ALTER TABLE alunos ADD COLUMN token_reset_senha TEXT');
+  }
+  if (!colunasAlunos.includes('token_reset_expira')) {
+    db.exec('ALTER TABLE alunos ADD COLUMN token_reset_expira DATETIME');
+  }
+}
+
 /** Cria as tabelas caso ainda nao existam. Roda a cada boot do servidor. */
 function inicializar() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.exec(schema);
+  migrar();
 }
 
 module.exports = { db, inicializar, ARQUIVO_DB };

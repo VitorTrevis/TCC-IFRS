@@ -89,10 +89,11 @@ function criarLimitador(rotulo, limite) {
 const limitarTentativasAdmin = criarLimitador('admin-login', 8);
 const limitarCadastroAluno = criarLimitador('cadastro-aluno', 5);
 const limitarReenvioConfirmacao = criarLimitador('reenvio-confirmacao', 3);
+const limitarEsqueciSenha = criarLimitador('esqueci-senha', 3);
 
 module.exports = {
   gerarTokenAdmin, gerarTokenAluno,
   exigirAdmin, exigirAluno,
-  limitarTentativasAdmin, limitarCadastroAluno, limitarReenvioConfirmacao,
+  limitarTentativasAdmin, limitarCadastroAluno, limitarReenvioConfirmacao, limitarEsqueciSenha,
   SENHA_ADMIN, SEGREDO
 };

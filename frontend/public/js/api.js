@@ -67,6 +67,8 @@ const api = {
   confirmarEmailAluno:  (token) => pedir('GET', `/alunos/confirmar-email?token=${encodeURIComponent(token)}`),
   reenviarConfirmacao:  (email) => pedir('POST', '/alunos/reenviar-confirmacao', { email }),
   loginAlunoEmail:      (email, senha) => pedir('POST', '/alunos/login', { email, senha }),
+  esqueciSenha:         (email) => pedir('POST', '/alunos/esqueci-senha', { email }),
+  redefinirSenha:       (token, senha, confirmar_senha) => pedir('POST', '/alunos/redefinir-senha', { token, senha, confirmar_senha }),
 
   // Contas de aluno — pre-cadastro manual pela coordenacao (excecao)
   buscarAlunos:      (nome) => pedir('GET', `/alunos/buscar?nome=${encodeURIComponent(nome)}`),

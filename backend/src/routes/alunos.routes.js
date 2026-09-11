@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const c = require('../controllers/alunos.controller');
 const { rota } = require('../middlewares/erros');
-const { exigirAdmin, exigirAluno, limitarCadastroAluno, limitarReenvioConfirmacao } = require('../middlewares/auth');
+const { exigirAdmin, exigirAluno, limitarCadastroAluno, limitarReenvioConfirmacao, limitarEsqueciSenha } = require('../middlewares/auth');
 
 const router = Router();
 
@@ -9,6 +9,10 @@ const router = Router();
 router.post('/cadastro', limitarCadastroAluno, rota(c.cadastrarPorEmail));
 router.get('/confirmar-email', rota(c.confirmarEmail));
 router.post('/reenviar-confirmacao', limitarReenvioConfirmacao, rota(c.reenviarConfirmacao));
+
+// Publico: esqueci minha senha (autocadastro por e-mail)
+router.post('/esqueci-senha', limitarEsqueciSenha, rota(c.esqueciSenha));
+router.post('/redefinir-senha', rota(c.redefinirSenha));
 
 // Publico: fluxo de login (aceita e-mail OU id/nome de pre-cadastro manual)
 router.get('/buscar', rota(c.buscar));

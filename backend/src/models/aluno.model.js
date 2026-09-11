@@ -70,6 +70,28 @@ const marcarEmailVerificado = (id) => db.prepare(`
   UPDATE alunos SET email_verificado = 1, token_verificacao = NULL, token_expira = NULL WHERE id = ?
 `).run(id);
 
+// ------------------------------------------- esqueci minha senha (por e-mail)
+
+/** Grava o token pendente de redefinicao de senha (substitui qualquer um anterior). */
+const definirTokenReset = (id, tokenHash, expiraEm) =>
+  db.prepare('UPDATE alunos SET token_reset_senha = ?, token_reset_expira = ? WHERE id = ?')
+    .run(tokenHash, expiraEm, id);
+
+/** So retorna a conta se o hash bater E o token ainda nao tiver expirado. */
+const porTokenResetValido = (tokenHash) => db.prepare(`
+  SELECT * FROM alunos
+  WHERE token_reset_senha = ? AND token_reset_expira IS NOT NULL AND token_reset_expira > datetime('now')
+`).get(tokenHash);
+
+/** Define a nova senha e invalida o token (uso unico). Tambem marca o e-mail como
+ *  verificado: clicar num link mandado para essa caixa de entrada e a mesma prova
+ *  de posse usada na confirmacao de cadastro, entao cobre o caso raro de alguem
+ *  pedir redefinicao antes de ter confirmado o cadastro original. */
+const redefinirSenhaComToken = (id, senha_hash) => db.prepare(`
+  UPDATE alunos SET senha_hash = ?, email_verificado = 1,
+    token_reset_senha = NULL, token_reset_expira = NULL WHERE id = ?
+`).run(senha_hash, id);
+
 /** Todas as partidas finalizadas em que o aluno marcou gol ou fez parte do elenco. */
 function estatisticas(idAluno) {
   const jogadores = db.prepare('SELECT id, id_time FROM jogadores WHERE id_aluno = ?').all(idAluno);
@@ -133,5 +155,6 @@ module.exports = {
   porId, buscarPorNome, porNomeExato, listar, existeNome,
   criar, definirSenha, resetarSenha, estatisticas,
   porEmail, existeEmail, criarComEmail, atualizarTokenVerificacao,
-  porTokenValido, marcarEmailVerificado
+  porTokenValido, marcarEmailVerificado,
+  definirTokenReset, porTokenResetValido, redefinirSenhaComToken
 };

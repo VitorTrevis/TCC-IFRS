@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS alunos (
   email_verificado    INTEGER NOT NULL DEFAULT 0,
   token_verificacao   TEXT,                     -- hash do token de confirmacao pendente (nunca o token em si)
   token_expira        DATETIME,
+  token_reset_senha   TEXT,                     -- hash do token de "esqueci minha senha" pendente (nunca o token em si)
+  token_reset_expira  DATETIME,
   criado_em           DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

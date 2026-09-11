@@ -3,10 +3,11 @@ const crypto = require('crypto');
 const Aluno = require('../models/aluno.model');
 const { gerarTokenAluno } = require('../middlewares/auth');
 const { falha } = require('../middlewares/erros');
-const { enviarConfirmacao } = require('../services/email.service');
+const { enviarConfirmacao, enviarRedefinicaoSenha } = require('../services/email.service');
 
 const DOMINIO_ALUNO = (process.env.DOMINIO_EMAIL_ALUNO || 'aluno.farroupilha.ifrs.edu.br').toLowerCase();
 const VALIDADE_TOKEN_MS = 24 * 60 * 60 * 1000; // 24h
+const VALIDADE_TOKEN_RESET_MS = 60 * 60 * 1000; // 1h — janela menor que a de confirmacao de e-mail
 
 /** So aceita e-mail cujo dominio bate exatamente com o da escola (case-insensitive). */
 function ehEmailInstitucional(email) {
@@ -26,6 +27,10 @@ function hashToken(tokenBruto) {
 
 function expiraEmIso() {
   return new Date(Date.now() + VALIDADE_TOKEN_MS).toISOString();
+}
+
+function expiraResetEmIso() {
+  return new Date(Date.now() + VALIDADE_TOKEN_RESET_MS).toISOString();
 }
 
 // ------------------------------------------------------ autocadastro (aluno)
@@ -97,6 +102,48 @@ async function reenviarConfirmacao(req, res) {
   }
 
   res.json({ mensagem: 'Se esse e-mail estiver cadastrado e pendente de confirmacao, reenviamos o link.' });
+}
+
+// ------------------------------------------------- esqueci minha senha (aluno)
+// So se aplica a contas de autocadastro (tem e-mail). O pre-cadastro manual usa
+// o reset feito pela coordenacao (ver `resetarSenha` mais abaixo).
+
+/** Gera um token de redefinicao e manda por e-mail, se a conta existir.
+ *  Sempre responde a mesma mensagem, exista ou nao a conta — mesmo motivo do
+ *  reenvio de confirmacao: nao dar pra descobrir por aqui quais e-mails tem conta. */
+async function esqueciSenha(req, res) {
+  const email = (req.body?.email || '').toString().trim().toLowerCase();
+  if (!email) falha(400, 'Informe o e-mail.');
+
+  const aluno = Aluno.porEmail(email);
+  if (aluno) {
+    const tokenBruto = gerarTokenBruto();
+    Aluno.definirTokenReset(aluno.id, hashToken(tokenBruto), expiraResetEmIso());
+    try {
+      await enviarRedefinicaoSenha({ nome: aluno.nome, email: aluno.email, tokenBruto });
+    } catch (e) {
+      console.error('Falha ao enviar e-mail de redefinicao de senha:', e.message);
+    }
+  }
+
+  res.json({ mensagem: 'Se esse e-mail tiver conta, mandamos um link para redefinir a senha.' });
+}
+
+/** Clique no link do e-mail: verifica o token, define a nova senha e ja loga o aluno. */
+async function redefinirSenha(req, res) {
+  const tokenBruto = (req.body?.token || '').toString();
+  const { senha, confirmar_senha } = req.body || {};
+
+  if (!tokenBruto) falha(400, 'Link invalido.');
+  if (!senha || String(senha).length < 6) falha(400, 'A senha precisa ter pelo menos 6 caracteres.');
+  if (senha !== confirmar_senha) falha(400, 'As senhas nao sao iguais.');
+
+  const aluno = Aluno.porTokenResetValido(hashToken(tokenBruto));
+  if (!aluno) falha(400, 'Esse link expirou ou ja foi usado. Peca uma nova redefinicao.');
+
+  Aluno.redefinirSenhaComToken(aluno.id, bcrypt.hashSync(String(senha), 10));
+  const publico = { id: aluno.id, nome: aluno.nome };
+  res.json({ token: gerarTokenAluno(publico), aluno: publico });
 }
 
 // --------------------------------------------- fluxo de pre-cadastro manual
@@ -182,6 +229,7 @@ function resetarSenha(req, res) {
 
 module.exports = {
   cadastrarPorEmail, confirmarEmail, reenviarConfirmacao,
+  esqueciSenha, redefinirSenha,
   buscar, definirSenha, entrar, minhasEstatisticas,
   listar, criar, resetarSenha
 };
