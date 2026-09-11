@@ -4,17 +4,19 @@ const id = parametro('id');
 
 function cabecalho(c) {
   return `
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
-      <div>
-        <div class="sobrancelha">${esc(c.modalidade)} &middot; ${esc(FORMATOS[c.formato] || c.formato)}</div>
-        <h1 class="mb-1">${esc(c.nome)}</h1>
-        <div class="d-flex align-items-center gap-2">
-          ${etiqueta(c.status)}
-          ${c.data_inicio ? `<span class="text-muted small">de ${esc(dataBR(c.data_inicio))}${c.data_fim ? ` ate ${esc(dataBR(c.data_fim))}` : ''}</span>` : ''}
+    <section class="capa">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+        <div>
+          <div class="sobrancelha">${esc(c.modalidade)} &middot; ${esc(FORMATOS[c.formato] || c.formato)}</div>
+          <h1 class="mb-1">${esc(c.nome)}<span class="ponto">.</span></h1>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            ${etiqueta(c.status)}
+            ${c.data_inicio ? `<span class="small">de ${esc(dataBR(c.data_inicio))}${c.data_fim ? ` ate ${esc(dataBR(c.data_fim))}` : ''}</span>` : ''}
+          </div>
         </div>
+        <button class="btn btn-outline-light btn-sm" id="btn-link">Copiar link desta pagina</button>
       </div>
-      <button class="btn btn-outline-primary btn-sm" id="btn-link">Copiar link desta pagina</button>
-    </div>`;
+    </section>`;
 }
 
 function jogos(dados) {
@@ -94,6 +96,7 @@ async function carregar() {
       '<div class="vazio"><strong>Campeonato nao informado</strong>Volte para a lista e escolha um campeonato.</div>';
     return;
   }
+  document.getElementById('aba-jogos').innerHTML = carregador('Carregando o campeonato');
   try {
     const dados = await api.publico(id);
     document.title = `${dados.campeonato.nome} - Campeonatos Escolares`;

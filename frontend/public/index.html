@@ -15,18 +15,19 @@
   <div id="topo"></div>
 
   <main class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
-      <div>
-        <div class="sobrancelha">Educacao fisica</div>
-        <h1 class="mb-1">Campeonatos da escola</h1>
-        <p class="text-muted mb-0">Tabela, classificacao e artilheiros atualizados a cada placar lancado.</p>
+    <section class="capa mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+        <div>
+          <div class="sobrancelha">Educacao fisica &middot; Campus Farroupilha</div>
+          <h1 class="mb-1">Campeonatos da escola<span class="ponto">.</span></h1>
+          <p class="mb-0">Tabela, classificacao e artilheiros atualizados a cada placar lancado.</p>
+        </div>
+        <button class="btn btn-primary btn-lg" id="btn-novo">Criar campeonato</button>
       </div>
-      <button class="btn btn-primary" id="btn-novo">Criar campeonato</button>
-    </div>
+      <div class="capa-numeros" id="capa-numeros"></div>
+    </section>
 
-    <div id="lista" class="row g-3">
-      <div class="col-12 text-center text-muted py-5">Carregando...</div>
-    </div>
+    <div id="lista" class="row g-3"></div>
   </main>
 
   <footer class="container rodape">

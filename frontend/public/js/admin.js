@@ -19,17 +19,19 @@ const el = (i) => document.getElementById(i);
 // ---------------------------------------------------------------- cabecalho
 function renderCabecalho() {
   el('cabecalho').innerHTML = `
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
-      <div>
-        <div class="sobrancelha">${esc(campeonato.modalidade)} &middot; ${esc(FORMATOS[campeonato.formato] || campeonato.formato)}${campeonato.turno_returno ? ' &middot; ida e volta' : ''}</div>
-        <h1 class="mb-1">${esc(campeonato.nome)}</h1>
-        ${etiqueta(campeonato.status)}
+    <section class="capa">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
+        <div>
+          <div class="sobrancelha">${esc(campeonato.modalidade)} &middot; ${esc(FORMATOS[campeonato.formato] || campeonato.formato)}${campeonato.turno_returno ? ' &middot; ida e volta' : ''}</div>
+          <h1 class="mb-2">${esc(campeonato.nome)}<span class="ponto">.</span></h1>
+          ${etiqueta(campeonato.status)}
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a class="btn btn-outline-light btn-sm" href="campeonato.html?id=${campeonato.id}" target="_blank" rel="noopener">Ver pagina publica</a>
+          <button class="btn btn-outline-danger btn-sm" id="btn-excluir">Excluir campeonato</button>
+        </div>
       </div>
-      <div class="d-flex gap-2 flex-wrap">
-        <a class="btn btn-outline-primary btn-sm" href="campeonato.html?id=${campeonato.id}" target="_blank" rel="noopener">Ver pagina publica</a>
-        <button class="btn btn-outline-danger btn-sm" id="btn-excluir">Excluir campeonato</button>
-      </div>
-    </div>`;
+    </section>`;
 
   el('btn-excluir').onclick = async () => {
     if (!confirm(`Excluir "${campeonato.nome}"? Times, jogos e placares vao junto.`)) return;

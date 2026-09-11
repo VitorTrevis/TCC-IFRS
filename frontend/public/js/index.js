@@ -7,11 +7,15 @@ function cartao(c) {
   const gerenciar = Sessao.ehAdmin
     ? `<a class="btn btn-sm btn-outline-primary mt-3" href="admin-campeonato.html?id=${c.id}">Gerenciar</a>`
     : '';
+  const inicial = (c.modalidade || '?').trim().charAt(0).toUpperCase();
   return `
     <div class="col-md-6 col-xl-4">
       <div class="cartao-campeonato">
         <div class="d-flex justify-content-between align-items-start gap-2">
-          <div class="sobrancelha">${esc(c.modalidade)}</div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="selo-modalidade" aria-hidden="true">${esc(inicial)}</span>
+            <div class="sobrancelha">${esc(c.modalidade)}</div>
+          </div>
           ${etiqueta(c.status)}
         </div>
         <h3>${esc(c.nome)}</h3>
@@ -29,9 +33,28 @@ function cartao(c) {
     </div>`;
 }
 
+/** Numeros de resumo na capa, somados a partir da propria lista. */
+function numerosDaCapa(campeonatos) {
+  const soma = (campo) => campeonatos.reduce((total, c) => total + (c[campo] || 0), 0);
+  const emAndamento = campeonatos.filter((c) => c.status === 'em_andamento').length;
+
+  const bloco = (valor, rotulo) => `
+    <div class="capa-numero">
+      <b data-contar="${valor}">0</b>
+      <span>${rotulo}</span>
+    </div>`;
+
+  return bloco(campeonatos.length, campeonatos.length === 1 ? 'campeonato' : 'campeonatos')
+    + bloco(soma('total_times'), 'times')
+    + bloco(soma('total_partidas'), 'jogos')
+    + bloco(emAndamento, 'em andamento');
+}
+
 async function carregar() {
+  lista.innerHTML = `<div class="col-12">${carregador('Carregando campeonatos')}</div>`;
   try {
     const campeonatos = await api.campeonatos();
+    document.getElementById('capa-numeros').innerHTML = numerosDaCapa(campeonatos);
     lista.innerHTML = campeonatos.length
       ? campeonatos.map(cartao).join('')
       : `<div class="col-12"><div class="vazio">

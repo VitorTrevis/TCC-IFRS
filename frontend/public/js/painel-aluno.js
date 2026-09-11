@@ -8,35 +8,26 @@ const el = (i) => document.getElementById(i);
 
 function cabecalho(dados) {
   const aluno = Sessao.aluno;
-  return `
-    <div class="sobrancelha">Meu painel</div>
-    <h1 class="mb-3">${esc(aluno?.nome || '')}</h1>
-    <div class="row g-3">
-      <div class="col-6 col-md-3">
-        <div class="cartao"><div class="cartao-corpo text-center py-3">
-          <div class="chip-placar d-inline-block">${dados.totalGols}</div>
-          <div class="sobrancelha mt-2">${dados.totalGols === 1 ? 'gol' : 'gols'} no total</div>
-        </div></div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="cartao"><div class="cartao-corpo text-center py-3">
-          <div class="chip-placar d-inline-block">${dados.totalPartidas}</div>
-          <div class="sobrancelha mt-2">${dados.totalPartidas === 1 ? 'partida' : 'partidas'}</div>
-        </div></div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="cartao"><div class="cartao-corpo text-center py-3">
-          <div class="chip-placar d-inline-block">${dados.porCampeonato.length}</div>
-          <div class="sobrancelha mt-2">${dados.porCampeonato.length === 1 ? 'campeonato' : 'campeonatos'}</div>
-        </div></div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="cartao"><div class="cartao-corpo text-center py-3">
-          <div class="chip-placar d-inline-block">${dados.totalPartidas ? (dados.totalGols / dados.totalPartidas).toFixed(1) : '0.0'}</div>
-          <div class="sobrancelha mt-2">gols por jogo</div>
-        </div></div>
-      </div>
+  const media = dados.totalPartidas ? (dados.totalGols / dados.totalPartidas).toFixed(1) : '0.0';
+
+  const numero = (valor, rotulo) => `
+    <div class="capa-numero">
+      <b data-contar="${valor}">0</b>
+      <span>${rotulo}</span>
     </div>`;
+
+  return `
+    <section class="capa">
+      <div class="sobrancelha">Meu painel</div>
+      <h1 class="mb-1">${esc(aluno?.nome || '')}<span class="ponto">.</span></h1>
+      <p class="mb-0">Seu desempenho nos campeonatos da escola, atualizado a cada placar lancado.</p>
+      <div class="capa-numeros">
+        ${numero(dados.totalGols, dados.totalGols === 1 ? 'gol no total' : 'gols no total')}
+        ${numero(dados.totalPartidas, dados.totalPartidas === 1 ? 'partida' : 'partidas')}
+        ${numero(dados.porCampeonato.length, dados.porCampeonato.length === 1 ? 'campeonato' : 'campeonatos')}
+        ${numero(media, 'gols por jogo')}
+      </div>
+    </section>`;
 }
 
 function estatisticas(dados) {

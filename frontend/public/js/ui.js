@@ -163,6 +163,13 @@ function agruparPartidas(partidas) {
   return porFase;
 }
 
+/** Classe visual da posicao: quando o campeonato define quantos avancam, o
+ *  destaque marca os classificados; sem isso, marca o podio (1o, 2o, 3o). */
+function classePosicao(posicao, classificados) {
+  if (classificados) return posicao <= classificados ? 'classificado' : '';
+  return posicao <= 3 ? `podio-${posicao}` : '';
+}
+
 function tabelaClassificacao(linhas, classificados = 0) {
   if (!linhas.length) return '<div class="vazio">Nenhum time cadastrado ainda.</div>';
   return `
@@ -180,15 +187,18 @@ function tabelaClassificacao(linhas, classificados = 0) {
         </thead>
         <tbody>
           ${linhas.map((l) => `
-            <tr>
-              <td><span class="posicao ${classificados && l.posicao <= classificados ? 'classificado' : ''}">${l.posicao}</span></td>
+            <tr class="${l.posicao === 1 ? 'lider' : ''}">
+              <td><span class="posicao ${classePosicao(l.posicao, classificados)}">${l.posicao}</span></td>
               <td>${esc(l.nome)}</td>
               <td class="destaque">${l.pontos}</td>
               <td>${l.jogos}</td><td>${l.vitorias}</td><td>${l.empates}</td><td>${l.derrotas}</td>
               <td class="d-none d-sm-table-cell">${l.gols_pro}</td>
               <td class="d-none d-sm-table-cell">${l.gols_contra}</td>
               <td>${l.saldo > 0 ? '+' : ''}${l.saldo}</td>
-              <td class="d-none d-md-table-cell">${l.aproveitamento}%</td>
+              <td class="d-none d-md-table-cell">
+                ${l.aproveitamento}%
+                <span class="barra-aproveitamento"><i style="width:${l.aproveitamento}%"></i></span>
+              </td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -206,8 +216,8 @@ function tabelaArtilheiros(linhas) {
         <thead><tr><th style="width:44px">#</th><th>Jogador</th><th>Time</th><th>Gols</th></tr></thead>
         <tbody>
           ${linhas.map((l) => `
-            <tr>
-              <td><span class="posicao ${l.posicao <= 3 ? 'classificado' : ''}">${l.posicao}</span></td>
+            <tr class="${l.posicao === 1 ? 'lider' : ''}">
+              <td><span class="posicao ${l.posicao <= 3 ? `podio-${l.posicao}` : ''}">${l.posicao}</span></td>
               <td>${esc(l.nome)}${l.numero !== null && l.numero !== undefined ? ` <span class="text-muted small">#${l.numero}</span>` : ''}</td>
               <td class="text-start">${esc(l.time)}</td>
               <td class="destaque">${l.gols}</td>
@@ -215,6 +225,16 @@ function tabelaArtilheiros(linhas) {
         </tbody>
       </table>
     </div>`;
+}
+
+/** Bloco de carregamento com o simbolo da marca (circulo + quadrados). */
+function carregador(texto = 'Carregando...') {
+  return `<div class="text-center py-5">
+    <div class="carregando" role="status" aria-label="${esc(texto)}">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="sobrancelha">${esc(texto)}</div>
+  </div>`;
 }
 
 /** Desenha a chave eliminatoria em colunas por fase. */
@@ -248,3 +268,119 @@ function desenharChave(partidas) {
       </div>`).join('')}
   </div>`;
 }
+
+/* =====================================================================
+   Micro-interacoes compartilhadas por todas as telas.
+   As paginas montam o HTML por JavaScript depois do fetch, entao um
+   MutationObserver percebe o conteudo novo e aplica revelacao e contadores
+   sozinho — nenhuma tela precisa chamar nada.
+   ===================================================================== */
+
+const SEM_MOVIMENTO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ALVOS_REVELAR = '.capa, .cartao, .cartao-campeonato, .vazio';
+
+const observadorRevelar = SEM_MOVIMENTO ? null : new IntersectionObserver((entradas, observador) => {
+  let atraso = 0;
+  for (const entrada of entradas) {
+    if (!entrada.isIntersecting) continue;
+    entrada.target.style.transitionDelay = `${Math.min(atraso, 240)}ms`;
+    entrada.target.classList.add('visivel');
+    observador.unobserve(entrada.target);
+    atraso += 60;
+  }
+}, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
+
+function prepararRevelacao(raiz = document) {
+  if (!observadorRevelar) return;
+  for (const alvo of raiz.querySelectorAll(ALVOS_REVELAR)) {
+    if (alvo.dataset.revelar) continue;
+    // Quem esta dentro de um container escondido (aba fechada, passo do login
+    // ainda nao aberto) nunca dispara o observador — ficaria invisivel para
+    // sempre. Esses aparecem normalmente, so sem a animacao de entrada.
+    if (!alvo.getClientRects().length) continue;
+    alvo.dataset.revelar = '1';
+    alvo.classList.add('revelar');
+    observadorRevelar.observe(alvo);
+  }
+}
+
+/** Numeros que sobem de 0 ate o valor final (`data-contar="12"`). */
+function animarContadores(raiz = document) {
+  for (const alvo of raiz.querySelectorAll('[data-contar]')) {
+    if (alvo.dataset.contado) continue;
+    alvo.dataset.contado = '1';
+
+    const final = Number(alvo.dataset.contar);
+    if (!Number.isFinite(final)) continue;
+    const casas = (alvo.dataset.contar.split('.')[1] || '').length;
+
+    if (SEM_MOVIMENTO || final === 0) { alvo.textContent = final.toFixed(casas); continue; }
+
+    const inicio = performance.now();
+    const passo = (agora) => {
+      const fracao = Math.min((agora - inicio) / 700, 1);
+      alvo.textContent = (final * (1 - Math.pow(1 - fracao, 3))).toFixed(casas);
+      if (fracao < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  }
+}
+
+/** Ondulacao a partir do ponto clicado, como retorno tatil do botao. */
+document.addEventListener('click', (evento) => {
+  if (SEM_MOVIMENTO) return;
+  const botao = evento.target.closest('.btn:not(.btn-link)');
+  if (!botao) return;
+
+  const area = botao.getBoundingClientRect();
+  const tamanho = Math.max(area.width, area.height);
+  const onda = document.createElement('span');
+  onda.className = 'ondulacao';
+  onda.style.width = onda.style.height = `${tamanho}px`;
+  onda.style.left = `${evento.clientX - area.left - tamanho / 2}px`;
+  onda.style.top = `${evento.clientY - area.top - tamanho / 2}px`;
+  botao.appendChild(onda);
+  setTimeout(() => onda.remove(), 600);
+});
+
+/** Abas do Bootstrap comecam escondidas (display:none). Ao abrir, libera o
+ *  que ja tiver sido marcado antes de esconder e dispara os contadores. */
+document.addEventListener('shown.bs.tab', (evento) => {
+  const painel = document.querySelector(evento.target.dataset.bsTarget || '');
+  if (!painel) return;
+  for (const alvo of painel.querySelectorAll('.revelar:not(.visivel)')) alvo.classList.add('visivel');
+  animarContadores(painel);
+});
+
+document.addEventListener('shown.bs.modal', (evento) => {
+  for (const alvo of evento.target.querySelectorAll('.revelar:not(.visivel)')) alvo.classList.add('visivel');
+});
+
+/* Os contadores trocam textContent a cada quadro, o que por si so ja e uma
+   mutacao — sem juntar as chamadas, o observador varreria a pagina 60x por
+   segundo enquanto os numeros sobem. */
+let varreduraAgendada = false;
+new MutationObserver(() => {
+  if (varreduraAgendada) return;
+  varreduraAgendada = true;
+  requestAnimationFrame(() => {
+    varreduraAgendada = false;
+    prepararRevelacao();
+    animarContadores();
+  });
+}).observe(document.body, { childList: true, subtree: true });
+
+const atualizarRolagem = () => document.body.classList.toggle('rolou', window.scrollY > 40);
+window.addEventListener('scroll', atualizarRolagem, { passive: true });
+atualizarRolagem();
+
+const voltarTopo = document.createElement('button');
+voltarTopo.type = 'button';
+voltarTopo.className = 'voltar-topo';
+voltarTopo.setAttribute('aria-label', 'Voltar ao topo');
+voltarTopo.innerHTML = '&uarr;';
+voltarTopo.onclick = () => window.scrollTo({ top: 0, behavior: SEM_MOVIMENTO ? 'auto' : 'smooth' });
+document.body.appendChild(voltarTopo);
+
+prepararRevelacao();
+animarContadores();
