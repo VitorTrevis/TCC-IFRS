@@ -1,5 +1,6 @@
 const Campeonato = require('../models/campeonato.model');
 const Partida = require('../models/partida.model');
+const Historico = require('../models/historico.model');
 const { falha } = require('../middlewares/erros');
 const { gerarTabela } = require('../services/tabela.service');
 const { classificacao, artilheiros } = require('../services/classificacao.service');
@@ -67,6 +68,10 @@ const detalhar = (req, res) => res.json(buscarOuFalhar(req.params.id));
 function criar(req, res) {
   const dados = validar(req.body);
   const id = Campeonato.criar(dados);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'criar', entidade: 'campeonato', entidade_id: id,
+    descricao: `criou o campeonato "${dados.nome}"`
+  });
   res.status(201).json(Campeonato.porId(id));
 }
 
@@ -81,18 +86,30 @@ function atualizar(req, res) {
     }
   }
   Campeonato.atualizar(atual.id, dados);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'editar', entidade: 'campeonato', entidade_id: atual.id,
+    descricao: `editou o campeonato "${dados.nome}"`
+  });
   res.json(Campeonato.porId(atual.id));
 }
 
 function remover(req, res) {
-  buscarOuFalhar(req.params.id);
+  const atual = buscarOuFalhar(req.params.id);
   Campeonato.remover(req.params.id);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'remover', entidade: 'campeonato', entidade_id: atual.id,
+    descricao: `excluiu o campeonato "${atual.nome}"`
+  });
   res.status(204).end();
 }
 
 function gerar(req, res) {
   const campeonato = buscarOuFalhar(req.params.id);
   const resumo = gerarTabela(campeonato);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'gerar_tabela', entidade: 'campeonato', entidade_id: campeonato.id,
+    descricao: `gerou a tabela de jogos de "${campeonato.nome}"`
+  });
   res.status(201).json({
     mensagem: 'Tabela de jogos gerada.',
     resumo,

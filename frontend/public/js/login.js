@@ -45,7 +45,7 @@ document.getElementById('btn-sou-aluno').onclick = () => {
 };
 document.getElementById('btn-sou-coordenacao').onclick = () => {
   mostrar('cartao-admin');
-  document.getElementById('senha-admin').focus();
+  document.getElementById('nome-admin').focus();
 };
 document.getElementById('btn-voltar-aluno').onclick = () => mostrar('escolha-papel');
 document.getElementById('btn-voltar-admin').onclick = () => mostrar('escolha-papel');
@@ -210,11 +210,13 @@ document.getElementById('a-senha').addEventListener('keydown', (e) => { if (e.ke
 // --------------------------------------------------------------- admin
 
 async function entrarAdmin() {
+  const nome = document.getElementById('nome-admin').value.trim();
   const senha = document.getElementById('senha-admin').value;
+  if (!nome) { avisar('Digite seu nome.', 'erro'); document.getElementById('nome-admin').focus(); return; }
   if (!senha) { avisar('Digite a senha da coordenacao.', 'erro'); return; }
   try {
-    const r = await api.loginAdmin(senha);
-    Sessao.entrarComoAdmin(r.token);
+    const r = await api.loginAdmin(senha, nome);
+    Sessao.entrarComoAdmin(r.token, r.nome);
     location.href = destinoAdmin();
   } catch (e) {
     avisar(e.message, 'erro');
@@ -222,4 +224,5 @@ async function entrarAdmin() {
 }
 
 document.getElementById('btn-entrar-admin').onclick = entrarAdmin;
+document.getElementById('nome-admin').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('senha-admin').focus(); });
 document.getElementById('senha-admin').addEventListener('keydown', (e) => { if (e.key === 'Enter') entrarAdmin(); });

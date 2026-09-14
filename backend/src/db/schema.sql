@@ -103,6 +103,22 @@ CREATE TABLE IF NOT EXISTS gols (
   FOREIGN KEY (id_jogador) REFERENCES jogadores(id) ON DELETE CASCADE
 );
 
+-- Trilha de auditoria das acoes da coordenacao. A senha do admin e unica e
+-- compartilhada (nao ha conta individual), entao "nome" e o nome que a
+-- pessoa digitou ao entrar — um registro de confianca (nao criptografado a
+-- uma identidade), mas resolve o "quem mexeu em que" no dia a dia.
+-- Sem chave estrangeira para a entidade de proposito: o registro precisa
+-- sobreviver mesmo depois que o campeonato/time/jogador/partida for apagado.
+CREATE TABLE IF NOT EXISTS historico (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome         TEXT NOT NULL,
+  acao         TEXT NOT NULL,     -- 'criar' | 'editar' | 'remover' | 'gerar_tabela' | 'lancar_placar' | 'apagar_placar' | 'resetar_senha'
+  entidade     TEXT NOT NULL,     -- 'campeonato' | 'time' | 'jogador' | 'partida' | 'aluno'
+  entidade_id  INTEGER,
+  descricao    TEXT NOT NULL,     -- frase pronta para exibir, ex: 'excluiu o campeonato "Interclasses 2026"'
+  criado_em    DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indices nas chaves estrangeiras (RNF02: consultas rapidas)
 CREATE INDEX IF NOT EXISTS idx_times_campeonato     ON times(id_campeonato);
 CREATE INDEX IF NOT EXISTS idx_jogadores_time       ON jogadores(id_time);
@@ -112,4 +128,5 @@ CREATE INDEX IF NOT EXISTS idx_partidas_time_a      ON partidas(id_time_a);
 CREATE INDEX IF NOT EXISTS idx_partidas_time_b      ON partidas(id_time_b);
 CREATE INDEX IF NOT EXISTS idx_partidas_fase        ON partidas(id_campeonato, fase);
 CREATE INDEX IF NOT EXISTS idx_gols_partida         ON gols(id_partida);
+CREATE INDEX IF NOT EXISTS idx_historico_criado_em  ON historico(criado_em DESC);
 CREATE INDEX IF NOT EXISTS idx_gols_jogador         ON gols(id_jogador);

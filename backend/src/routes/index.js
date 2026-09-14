@@ -8,4 +8,5 @@ router.use('/times', require('./times.routes'));
 router.use('/jogadores', require('./jogadores.routes'));
 router.use('/partidas', require('./partidas.routes'));
 router.use('/publico', require('./publico.routes'));
+router.use('/historico', require('./historico.routes'));
 module.exports = router;

@@ -4,8 +4,9 @@ const SEGREDO = process.env.JWT_SECRET || 'troque-este-segredo-em-producao';
 const VALIDADE = process.env.JWT_EXPIRES || '8h';
 const SENHA_ADMIN = process.env.ADMIN_PASSWORD || 'ifrs2026';
 
-function gerarTokenAdmin() {
-  return jwt.sign({ role: 'admin' }, SEGREDO, { expiresIn: VALIDADE });
+/** `nome` e quem a pessoa digitou ao entrar — vai no historico de acoes. */
+function gerarTokenAdmin(nome) {
+  return jwt.sign({ role: 'admin', nome }, SEGREDO, { expiresIn: VALIDADE });
 }
 
 function gerarTokenAluno(aluno) {
@@ -28,7 +29,9 @@ function exigirAdmin(req, res, next) {
     if (dados.role !== 'admin') {
       return res.status(403).json({ erro: 'Essa acao e restrita a coordenacao.' });
     }
-    req.admin = true;
+    // Tokens emitidos antes do login pedir o nome nao tem esse campo —
+    // usa um rotulo generico em vez de quebrar o registro no historico.
+    req.admin = { nome: dados.nome || 'Coordenacao (sessao antiga)' };
     next();
   } catch (e) {
     res.status(401).json({ erro: 'Sessao expirada. Entre novamente.' });

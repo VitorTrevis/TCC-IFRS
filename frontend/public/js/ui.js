@@ -63,7 +63,7 @@ function montarTopo(ativo = '') {
 
   let areaConta = `<a class="btn btn-sm btn-outline-light" href="login.html">Entrar</a>`;
   if (Sessao.ehAdmin) {
-    areaConta = `<span class="text-white-50 small d-none d-lg-inline">Coordenacao</span>
+    areaConta = `<span class="text-white-50 small d-none d-lg-inline">${esc(Sessao.nomeAdmin || 'Coordenacao')}</span>
                  <button class="btn btn-sm btn-outline-light" id="btn-sair">Sair</button>`;
   } else if (Sessao.ehAluno) {
     const aluno = Sessao.aluno;
@@ -77,6 +77,10 @@ function montarTopo(ativo = '') {
 
   const linkAlunos = Sessao.ehAdmin
     ? `<li class="nav-item"><a class="nav-link ${ativo === 'alunos' ? 'ativo' : ''}" href="alunos-admin.html">Alunos</a></li>`
+    : '';
+
+  const linkHistorico = Sessao.ehAdmin
+    ? `<li class="nav-item"><a class="nav-link ${ativo === 'historico' ? 'ativo' : ''}" href="historico.html">Historico</a></li>`
     : '';
 
   alvo.innerHTML = `
@@ -100,6 +104,7 @@ function montarTopo(ativo = '') {
             </li>
             ${linkPainel}
             ${linkAlunos}
+            ${linkHistorico}
           </ul>
           <div class="d-flex align-items-center gap-2">${areaConta}</div>
         </div>

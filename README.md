@@ -186,7 +186,10 @@ O sistema tem **três níveis de acesso**:
 
 ### Coordenação
 
-1. **Entrar** → "Sou da coordenação" → digite a senha `ifrs2026`.
+1. **Entrar** → "Sou da coordenação" → digite seu nome e a senha `ifrs2026`.
+   O nome fica registrado no **Histórico** (menu da coordenação) junto de cada
+   alteração que você fizer — como a senha é única e compartilhada, é o nome
+   que identifica quem criou, editou ou excluiu o quê.
 2. **Criar campeonato** — escolha nome, modalidade e formato.
 3. **Cadastrar os times** no painel, e os jogadores de cada time em "Elenco".
    Ao adicionar um jogador, vincule-o a um aluno já cadastrado pelo campo de
@@ -198,6 +201,8 @@ O sistema tem **três níveis de acesso**:
 6. **Compartilhar a página pública** (`campeonato.html?id=N`) com as turmas.
 7. **Acompanhar os alunos** no menu "Alunos" — quem já confirmou o e-mail, quem
    está pendente, e o pré-cadastro manual de exceção (veja abaixo).
+8. **Conferir o histórico** no menu "Histórico" — lista, mais recente primeiro,
+   quem criou, editou ou excluiu cada campeonato, time, jogador e placar.
 
 ### Aluno — caminho normal (autocadastro por e-mail institucional)
 
@@ -303,7 +308,7 @@ Persistência    SQLite via better-sqlite3, com schema relacional e chaves estra
   /scripts
     gerar-banco-vercel.js
   /src
-    /controllers    admin, alunos, campeonatos, times, jogadores, partidas, publico
+    /controllers    admin, alunos, campeonatos, times, jogadores, partidas, publico, historico
     /models         acesso ao banco (consultas SQL isoladas)
     /routes         definição das rotas por recurso
     /services       tabela.service.js (geração de jogos)
@@ -327,6 +332,7 @@ Persistência    SQLite via better-sqlite3, com schema relacional e chaves estra
     painel-aluno.html     painel do aluno com estatísticas pessoais
     admin-campeonato.html painel do organizador
     alunos-admin.html     lista de alunos e pré-cadastro manual (exceção)
+    historico.html        quem criou/editou/excluiu o quê (só coordenação)
     campeonato.html       página pública (jogos, classificação, artilheiros)
     classificacao.html    só a classificação
     artilheiros.html      só a artilharia
@@ -344,7 +350,7 @@ Tudo em `/api`. Erros voltam sempre como `{ "erro": "mensagem clara" }`.
 
 | Método | Rota | Descrição |
 |---|---|---|
-| POST | `/api/admin/login` | Corpo `{ senha }`. Devolve token com `role: "admin"` |
+| POST | `/api/admin/login` | Corpo `{ senha, nome }`. `nome` é quem está entrando — vai no token e identifica a pessoa no histórico. Devolve token com `role: "admin"` |
 | POST | `/api/alunos/cadastro` | Autocadastro. Corpo `{ nome, email, senha, confirmar_senha }`. E-mail precisa terminar no domínio institucional |
 | GET | `/api/alunos/confirmar-email?token=` | Confirma a conta e já devolve o login (token + dados do aluno) |
 | POST | `/api/alunos/reenviar-confirmacao` | Corpo `{ email }`. Sempre responde a mesma mensagem, exista ou não a conta |
@@ -427,11 +433,17 @@ uma soma de gols individuais maior que o placar.
 | GET | `/api/campeonatos/:id/artilheiros` | Ranking de artilheiros |
 | GET | `/api/publico/campeonatos/:id` | Tudo de uma vez: campeonato, times, partidas, classificação e artilheiros |
 
+### Histórico (admin)
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/api/historico` | Últimas 300 alterações (mais recente primeiro): quem, o quê e quando |
+
 ---
 
 ## Modelo de dados
 
-Seis tabelas: `alunos`, `campeonatos`, `times`, `jogadores`, `partidas`, `gols`.
+Sete tabelas: `alunos`, `campeonatos`, `times`, `jogadores`, `partidas`, `gols`, `historico`.
 O schema completo está em `backend/src/db/schema.sql`.
 
 Pontos que fogem do óbvio:
@@ -453,7 +465,13 @@ Pontos que fogem do óbvio:
   válido — o mesmo princípio usado para `senha_hash`. `token_reset_senha` (par de
   colunas independente, usado em "esqueci minha senha") segue a mesma regra.
 - **Não existe tabela de coordenadores.** O admin é uma senha única em variável de
-  ambiente, sem conta individual.
+  ambiente, sem conta individual — `historico.nome` é o nome que a pessoa digitou
+  ao entrar, não uma conta de verdade: é um registro de confiança (todo mundo usa
+  a mesma senha), não uma identidade autenticada.
+- **`historico` não tem chave estrangeira para a entidade que registra**
+  (`entidade` + `entidade_id` são só texto/número soltos). Proposital: o registro
+  precisa continuar existindo mesmo depois que o campeonato/time/jogador for
+  apagado — é justamente o exemplo mais comum de uso ("quem excluiu isso?").
 - Todas as chaves estrangeiras têm índice, e `ON DELETE CASCADE` onde faz sentido:
   apagar um campeonato apaga times, jogadores, partidas e gols. Apagar um aluno
   usa `ON DELETE SET NULL`: o jogador continua no time, só perde o vínculo com a conta.
@@ -534,8 +552,13 @@ o resultado de trás para frente.
 
 ## Limitações conhecidas
 
-- A senha do admin é compartilhada: o sistema não registra *qual* professor fez cada
-  alteração. Para auditoria por pessoa, seria preciso voltar a contas individuais.
+- A senha do admin continua compartilhada — quem sabe a senha tem acesso total.
+  O login agora pede o nome de quem está entrando, e o **Histórico** mostra quem
+  criou, editou ou excluiu cada coisa. Isso resolve o "quem mexeu em quê" no dia
+  a dia, mas não é uma autenticação de verdade: o nome é o que a pessoa digitou,
+  não uma conta com senha própria — nada impede alguém de digitar o nome de
+  outra pessoa. Para autenticação individual de fato, seria preciso contas
+  próprias por coordenador(a).
 - Quem sabe a senha do admin tem acesso total. Troque-a no `.env` a cada ano letivo.
 - **Sem envio de e-mail configurado (`GMAIL_USER`/`GMAIL_APP_PASSWORD`), o
   autocadastro não funciona de verdade** — o link fica só no log do servidor. Para uso

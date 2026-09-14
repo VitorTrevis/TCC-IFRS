@@ -1,6 +1,7 @@
 const Jogador = require('../models/jogador.model');
 const Time = require('../models/time.model');
 const Aluno = require('../models/aluno.model');
+const Historico = require('../models/historico.model');
 const { falha } = require('../middlewares/erros');
 
 function timeOuFalha(id) {
@@ -45,6 +46,10 @@ function criar(req, res) {
   const numero = numeroValido(req.body?.numero);
   const id_aluno = resolverIdAluno(req.body || {});
   const id = Jogador.criar({ nome, numero, id_time: time.id, id_aluno });
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'criar', entidade: 'jogador', entidade_id: id,
+    descricao: `adicionou "${nome}" ao time "${time.nome}"`
+  });
   res.status(201).json(Jogador.porId(id));
 }
 
@@ -61,6 +66,12 @@ function atualizar(req, res) {
   const id_aluno = veioAlgumCampoDeAluno ? resolverIdAluno(req.body || {}) : jogador.id_aluno;
 
   Jogador.atualizar(jogador.id, { nome, numero: numeroValido(req.body?.numero), id_aluno });
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'editar', entidade: 'jogador', entidade_id: jogador.id,
+    descricao: nome !== jogador.nome
+      ? `renomeou o jogador "${jogador.nome}" para "${nome}"`
+      : `editou o jogador "${jogador.nome}"`
+  });
   res.json(Jogador.porId(jogador.id));
 }
 
@@ -68,6 +79,10 @@ function remover(req, res) {
   const jogador = Jogador.porId(req.params.id);
   if (!jogador) falha(404, 'Jogador nao encontrado.');
   Jogador.remover(jogador.id);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'remover', entidade: 'jogador', entidade_id: jogador.id,
+    descricao: `excluiu o jogador "${jogador.nome}"`
+  });
   res.status(204).end();
 }
 

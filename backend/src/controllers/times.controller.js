@@ -1,6 +1,7 @@
 const Time = require('../models/time.model');
 const Campeonato = require('../models/campeonato.model');
 const Partida = require('../models/partida.model');
+const Historico = require('../models/historico.model');
 const { falha } = require('../middlewares/erros');
 
 function campeonatoOuFalha(id) {
@@ -34,6 +35,10 @@ function criar(req, res) {
   }
 
   const id = Time.criar({ nome, id_campeonato: campeonato.id, escudo_url: req.body?.escudo_url });
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'criar', entidade: 'time', entidade_id: id,
+    descricao: `criou o time "${nome}" em "${campeonato.nome}"`
+  });
   res.status(201).json(Time.porId(id));
 }
 
@@ -45,6 +50,12 @@ function atualizar(req, res) {
     falha(400, `Ja existe um time chamado "${nome}" neste campeonato.`);
   }
   Time.atualizar(time.id, { nome, escudo_url: req.body?.escudo_url });
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'editar', entidade: 'time', entidade_id: time.id,
+    descricao: nome !== time.nome
+      ? `renomeou o time "${time.nome}" para "${nome}"`
+      : `editou o time "${time.nome}"`
+  });
   res.json(Time.porId(time.id));
 }
 
@@ -54,6 +65,10 @@ function remover(req, res) {
     falha(400, 'A tabela de jogos ja foi gerada. Apague a tabela ou gere de novo antes de remover times.');
   }
   Time.remover(time.id);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'remover', entidade: 'time', entidade_id: time.id,
+    descricao: `excluiu o time "${time.nome}"`
+  });
   res.status(204).end();
 }
 

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const Aluno = require('../models/aluno.model');
+const Historico = require('../models/historico.model');
 const { gerarTokenAluno } = require('../middlewares/auth');
 const { falha } = require('../middlewares/erros');
 const { enviarConfirmacao, enviarRedefinicaoSenha } = require('../services/email.service');
@@ -215,6 +216,10 @@ function criar(req, res) {
   if (!nome) falha(400, 'Informe o nome completo do aluno.');
   if (Aluno.existeNome(nome)) falha(400, `Ja existe um aluno pre-cadastrado como "${nome}". Diferencie o nome (ex: com a turma) se for outra pessoa.`);
   const id = Aluno.criar(nome);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'criar', entidade: 'aluno', entidade_id: id,
+    descricao: `pre-cadastrou o aluno "${nome}"`
+  });
   res.status(201).json(Aluno.porId(id));
 }
 
@@ -222,6 +227,10 @@ function resetarSenha(req, res) {
   const aluno = Aluno.porId(req.params.id);
   if (!aluno) falha(404, 'Aluno nao encontrado.');
   Aluno.resetarSenha(aluno.id);
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'resetar_senha', entidade: 'aluno', entidade_id: aluno.id,
+    descricao: `resetou a senha de "${aluno.nome}"`
+  });
   res.json({
     mensagem: `Senha de ${aluno.nome} foi resetada. Ele define uma nova em "Fui cadastrado pela coordenacao" na tela de login, buscando pelo proprio nome.`
   });

@@ -4,6 +4,7 @@ const API = '/api';
 const CHAVE_TOKEN = 'campeonatos:token';
 const CHAVE_PAPEL = 'campeonatos:papel';   // 'admin' | 'aluno'
 const CHAVE_ALUNO = 'campeonatos:aluno';   // so preenchido quando papel = 'aluno'
+const CHAVE_ADMIN_NOME = 'campeonatos:admin_nome'; // so preenchido quando papel = 'admin'
 
 const Sessao = {
   get token() { return localStorage.getItem(CHAVE_TOKEN); },
@@ -12,24 +13,28 @@ const Sessao = {
     try { return JSON.parse(localStorage.getItem(CHAVE_ALUNO) || 'null'); }
     catch { return null; }
   },
+  get nomeAdmin() { return localStorage.getItem(CHAVE_ADMIN_NOME); },
   get logado() { return Boolean(this.token); },
   get ehAdmin() { return this.logado && this.papel === 'admin'; },
   get ehAluno() { return this.logado && this.papel === 'aluno'; },
 
-  entrarComoAdmin(token) {
+  entrarComoAdmin(token, nome) {
     localStorage.setItem(CHAVE_TOKEN, token);
     localStorage.setItem(CHAVE_PAPEL, 'admin');
+    localStorage.setItem(CHAVE_ADMIN_NOME, nome || '');
     localStorage.removeItem(CHAVE_ALUNO);
   },
   entrarComoAluno(token, aluno) {
     localStorage.setItem(CHAVE_TOKEN, token);
     localStorage.setItem(CHAVE_PAPEL, 'aluno');
     localStorage.setItem(CHAVE_ALUNO, JSON.stringify(aluno));
+    localStorage.removeItem(CHAVE_ADMIN_NOME);
   },
   sair() {
     localStorage.removeItem(CHAVE_TOKEN);
     localStorage.removeItem(CHAVE_PAPEL);
     localStorage.removeItem(CHAVE_ALUNO);
+    localStorage.removeItem(CHAVE_ADMIN_NOME);
   }
 };
 
@@ -59,8 +64,9 @@ async function pedir(metodo, caminho, corpo) {
 }
 
 const api = {
-  // Coordenacao (senha unica)
-  loginAdmin: (senha) => pedir('POST', '/admin/login', { senha }),
+  // Coordenacao (senha unica + nome de quem esta entrando, para o historico)
+  loginAdmin: (senha, nome) => pedir('POST', '/admin/login', { senha, nome }),
+  historico: () => pedir('GET', '/historico'),
 
   // Contas de aluno — autocadastro por e-mail institucional (caminho principal)
   cadastrarAluno:       (nome, email, senha, confirmar_senha) => pedir('POST', '/alunos/cadastro', { nome, email, senha, confirmar_senha }),

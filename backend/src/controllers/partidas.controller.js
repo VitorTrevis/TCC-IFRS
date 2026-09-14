@@ -1,6 +1,7 @@
 const { db } = require('../db');
 const Partida = require('../models/partida.model');
 const Campeonato = require('../models/campeonato.model');
+const Historico = require('../models/historico.model');
 const { falha } = require('../middlewares/erros');
 const { promoverVencedor, preencherMataMataComClassificados } = require('../services/tabela.service');
 
@@ -126,6 +127,10 @@ function registrarResultado(req, res) {
   if (!eliminatoria) preencherMataMataComClassificados(partida.id_campeonato);
   fecharCampeonatoSeAcabou(partida.id_campeonato);
 
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'lancar_placar', entidade: 'partida', entidade_id: partida.id,
+    descricao: `lancou o placar de "${partida.time_a} ${gols_a} x ${gols_b} ${partida.time_b}"`
+  });
   res.json({ ...Partida.porId(partida.id), gols: Partida.golsDaPartida(partida.id) });
 }
 
@@ -150,6 +155,10 @@ function apagarResultado(req, res) {
     db.prepare("UPDATE campeonatos SET status = 'em_andamento' WHERE id = ?").run(partida.id_campeonato);
   })();
 
+  Historico.registrar({
+    nome: req.admin.nome, acao: 'apagar_placar', entidade: 'partida', entidade_id: partida.id,
+    descricao: `apagou o placar de "${partida.time_a} x ${partida.time_b}"`
+  });
   res.json(Partida.porId(partida.id));
 }
 
