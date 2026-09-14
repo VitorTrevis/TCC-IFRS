@@ -34,7 +34,7 @@ function renderCabecalho() {
     </section>`;
 
   el('btn-excluir').onclick = async () => {
-    if (!confirm(`Excluir "${campeonato.nome}"? Times, jogos e placares vao junto.`)) return;
+    if (!(await confirmarAcao(`Excluir "${campeonato.nome}"? Times, jogos e placares vao junto.`, 'Excluir campeonato'))) return;
     try {
       await api.removerCampeonato(campeonato.id);
       location.href = 'index.html';
@@ -73,7 +73,7 @@ function renderTimes() {
   el('lista-times').querySelectorAll('[data-renomear]').forEach((b) => {
     b.onclick = async () => {
       const time = times.find((t) => t.id === Number(b.dataset.renomear));
-      const nome = prompt('Novo nome do time:', time.nome);
+      const nome = await pedirTexto('Novo nome do time:', time.nome);
       if (!nome) return;
       try { await api.editarTime(time.id, { nome }); await recarregar(); }
       catch (e) { avisar(e.message, 'erro'); }
@@ -82,7 +82,7 @@ function renderTimes() {
   el('lista-times').querySelectorAll('[data-excluir-time]').forEach((b) => {
     b.onclick = async () => {
       const time = times.find((t) => t.id === Number(b.dataset.excluirTime));
-      if (!confirm(`Excluir o time "${time.nome}"?`)) return;
+      if (!(await confirmarAcao(`Excluir o time "${time.nome}"?`, 'Excluir time'))) return;
       try { await api.removerTime(time.id); await recarregar(); }
       catch (e) { avisar(e.message, 'erro'); }
     };
@@ -180,7 +180,7 @@ el('novo-jogador').addEventListener('keydown', (e) => { if (e.key === 'Enter') e
 // ------------------------------------------------------------------ partidas
 el('btn-gerar').onclick = async () => {
   const jaTem = partidas.length > 0;
-  if (jaTem && !confirm('Gerar a tabela de novo apaga todos os jogos e placares ja lancados. Continuar?')) return;
+  if (jaTem && !(await confirmarAcao('Gerar a tabela de novo apaga todos os jogos e placares ja lancados. Continuar?', 'Gerar de novo'))) return;
   try {
     await api.gerarTabela(campeonato.id);
     avisar('Tabela de jogos gerada.', 'sucesso');
@@ -331,7 +331,7 @@ el('btn-salvar-placar').onclick = async () => {
 };
 
 el('btn-apagar-placar').onclick = async () => {
-  if (!confirm('Apagar o resultado desta partida?')) return;
+  if (!(await confirmarAcao('Apagar o resultado desta partida?', 'Apagar resultado'))) return;
   try {
     await api.apagarResultado(partidaAberta.id);
     modalPlacar.hide();

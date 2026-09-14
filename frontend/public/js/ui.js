@@ -56,6 +56,99 @@ function avisar(mensagem, tipo = 'info') {
   setTimeout(() => alerta.remove(), 4500);
 }
 
+/* =====================================================================
+   Substitutos de confirm()/prompt() nativos: viram uma caixa de dialogo
+   feia (ou, em alguns embeds/iframes, nem funcionam — o navegador pode
+   bloquear ou suprimir os dois). Um modal proprio funciona em qualquer
+   lugar e segue o visual do resto do site. Cada funcao cria seu modal
+   uma unica vez (na primeira chamada) e reaproveita nas seguintes.
+   ===================================================================== */
+
+let modalConfirmar;
+
+/** Substitui `confirm()`. Uso: `if (!(await confirmarAcao('Excluir X?'))) return;` */
+function confirmarAcao(mensagem, textoBotao = 'Confirmar') {
+  if (!modalConfirmar) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal fade" id="modal-confirmar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-body pt-4" id="texto-modal-confirmar"></div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" id="btn-ok-modal-confirmar"></button>
+            </div>
+          </div>
+        </div>
+      </div>`);
+    modalConfirmar = new bootstrap.Modal(document.getElementById('modal-confirmar'));
+  }
+  document.getElementById('texto-modal-confirmar').textContent = mensagem;
+  document.getElementById('btn-ok-modal-confirmar').textContent = textoBotao;
+
+  return new Promise((resolve) => {
+    const elModal = document.getElementById('modal-confirmar');
+    const btnOk = document.getElementById('btn-ok-modal-confirmar');
+    const finalizar = (resultado) => {
+      btnOk.removeEventListener('click', aoConfirmar);
+      elModal.removeEventListener('hidden.bs.modal', aoFechar);
+      resolve(resultado);
+    };
+    const aoConfirmar = () => { finalizar(true); modalConfirmar.hide(); };
+    const aoFechar = () => finalizar(false);
+    btnOk.addEventListener('click', aoConfirmar);
+    elModal.addEventListener('hidden.bs.modal', aoFechar);
+    modalConfirmar.show();
+  });
+}
+
+let modalPedirTexto;
+
+/** Substitui `prompt()`. Devolve o texto (ou `null` se cancelado). */
+function pedirTexto(mensagem, valorInicial = '', textoBotao = 'Salvar') {
+  if (!modalPedirTexto) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal fade" id="modal-pedir-texto" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-body pt-4">
+              <label class="form-label" id="texto-modal-pedir" for="campo-modal-pedir"></label>
+              <input class="form-control" id="campo-modal-pedir">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-primary" id="btn-ok-modal-pedir"></button>
+            </div>
+          </div>
+        </div>
+      </div>`);
+    modalPedirTexto = new bootstrap.Modal(document.getElementById('modal-pedir-texto'));
+  }
+  const campo = document.getElementById('campo-modal-pedir');
+  document.getElementById('texto-modal-pedir').textContent = mensagem;
+  document.getElementById('btn-ok-modal-pedir').textContent = textoBotao;
+  campo.value = valorInicial;
+
+  return new Promise((resolve) => {
+    const elModal = document.getElementById('modal-pedir-texto');
+    const btnOk = document.getElementById('btn-ok-modal-pedir');
+    const finalizar = (resultado) => {
+      btnOk.removeEventListener('click', aoConfirmar);
+      campo.removeEventListener('keydown', aoTeclar);
+      elModal.removeEventListener('hidden.bs.modal', aoFechar);
+      resolve(resultado);
+    };
+    const aoConfirmar = () => { finalizar(campo.value.trim() || null); modalPedirTexto.hide(); };
+    const aoTeclar = (e) => { if (e.key === 'Enter') aoConfirmar(); };
+    const aoFechar = () => finalizar(null);
+    btnOk.addEventListener('click', aoConfirmar);
+    campo.addEventListener('keydown', aoTeclar);
+    elModal.addEventListener('hidden.bs.modal', aoFechar);
+    modalPedirTexto.show();
+    setTimeout(() => campo.focus(), 300);
+  });
+}
+
 /** Monta a barra superior de acordo com o papel da sessao (admin, aluno ou visitante). */
 function montarTopo(ativo = '') {
   const alvo = document.getElementById('topo');

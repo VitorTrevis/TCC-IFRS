@@ -47,7 +47,7 @@ function render(alunos) {
   el('lista-alunos').querySelectorAll('[data-resetar]').forEach((b) => {
     b.onclick = async () => {
       const aluno = alunos.find((a) => a.id === Number(b.dataset.resetar));
-      if (!confirm(`Resetar a senha de ${aluno.nome}? Ele vai escolher uma nova em "Fui cadastrado pela coordenacao" na tela de login.`)) return;
+      if (!(await confirmarAcao(`Resetar a senha de ${aluno.nome}? Ele vai escolher uma nova em "Fui cadastrado pela coordenacao" na tela de login.`, 'Resetar senha'))) return;
       try {
         const r = await api.resetarSenhaAluno(aluno.id);
         avisar(r.mensagem, 'sucesso');
