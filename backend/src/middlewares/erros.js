@@ -24,7 +24,13 @@ function naoEncontrado(req, res) {
 // eslint-disable-next-line no-unused-vars
 function tratarErro(erro, req, res, next) {
   const status = erro.status || 500;
-  if (status >= 500) console.error(erro);
+  if (status >= 500) {
+    // Erro não previsto (bug, driver do banco, etc.) — o detalhe técnico fica
+    // só no log do servidor. Devolver erro.message ao cliente aqui vazaria
+    // informação interna (ex: mensagens do SQLite) sem ajudar quem usa o site.
+    console.error(erro);
+    return res.status(status).json({ erro: 'Erro interno no servidor.' });
+  }
   res.status(status).json({ erro: erro.message || 'Erro interno no servidor.' });
 }
 

@@ -1,7 +1,10 @@
 const { Router } = require('express');
 const c = require('../controllers/alunos.controller');
 const { rota } = require('../middlewares/erros');
-const { exigirAdmin, exigirAluno, limitarCadastroAluno, limitarReenvioConfirmacao, limitarEsqueciSenha } = require('../middlewares/auth');
+const {
+  exigirAdmin, exigirAluno, limitarCadastroAluno, limitarReenvioConfirmacao,
+  limitarEsqueciSenha, limitarLoginAluno, limitarDefinirSenha
+} = require('../middlewares/auth');
 
 const router = Router();
 
@@ -16,8 +19,8 @@ router.post('/redefinir-senha', rota(c.redefinirSenha));
 
 // Público: fluxo de login (aceita e-mail OU id/nome de pré-cadastro manual)
 router.get('/buscar', rota(c.buscar));
-router.post('/:id/definir-senha', rota(c.definirSenha));
-router.post('/login', rota(c.entrar));
+router.post('/:id/definir-senha', limitarDefinirSenha, rota(c.definirSenha));
+router.post('/login', limitarLoginAluno, rota(c.entrar));
 
 // Exclusivo do aluno logado
 router.get('/eu/estatisticas', exigirAluno, rota(c.minhasEstatisticas));

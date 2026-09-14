@@ -9,6 +9,13 @@ const { naoEncontrado, tratarErro } = require('./middlewares/erros');
 inicializar();
 
 const app = express();
+// Hospedado atrás de um proxy reverso (função serverless da Vercel). Sem isso,
+// o Express ignora o cabeçalho X-Forwarded-For e req.ip fica sempre igual pra
+// todo mundo — os limitadores de tentativas por IP (middlewares/auth.js)
+// viram, na prática, um balde único e global em vez de um por pessoa.
+// "1" = confia só no primeiro salto (o proxy da Vercel), que é exatamente
+// a topologia daqui. Local, sem proxy na frente, isso não muda nada.
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
 

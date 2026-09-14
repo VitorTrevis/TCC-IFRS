@@ -2,7 +2,15 @@ montarTopo();
 
 if (Sessao.logado) location.href = Sessao.ehAluno ? 'painel-aluno.html' : 'index.html';
 
-const destinoAdmin = () => parametro('voltar') || 'index.html';
+/** Só aceita um caminho relativo do próprio site (ex: "admin-campeonato.html?id=5").
+ *  Sem isso, um link tipo "login.html?voltar=https://site-falso.com" faria o
+ *  navegador saltar pra fora do site logo depois de um login de verdade —
+ *  um redirecionamento aberto, padrão comum em phishing. */
+function destinoSeguro(bruto, padrao) {
+  if (bruto && /^[a-z0-9_-]+\.html(\?[^\s]*)?$/i.test(bruto)) return bruto;
+  return padrao;
+}
+const destinoAdmin = () => destinoSeguro(parametro('voltar'), 'index.html');
 const destinoAluno = () => 'painel-aluno.html';
 
 let alunoEmAndamento = null; // { id, nome, tem_senha } — só usado no fluxo manual (pré-cadastro)

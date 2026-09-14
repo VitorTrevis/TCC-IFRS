@@ -93,10 +93,14 @@ const limitarTentativasAdmin = criarLimitador('admin-login', 8);
 const limitarCadastroAluno = criarLimitador('cadastro-aluno', 5);
 const limitarReenvioConfirmacao = criarLimitador('reenvio-confirmacao', 3);
 const limitarEsqueciSenha = criarLimitador('esqueci-senha', 3);
+const limitarLoginAluno = criarLimitador('login-aluno', 8);
+// Mais apertado: cada acerto aqui é uma conta reivindicada (ver auditoria, item 4.1).
+const limitarDefinirSenha = criarLimitador('definir-senha', 5);
 
 module.exports = {
   gerarTokenAdmin, gerarTokenAluno,
   exigirAdmin, exigirAluno,
   limitarTentativasAdmin, limitarCadastroAluno, limitarReenvioConfirmacao, limitarEsqueciSenha,
+  limitarLoginAluno, limitarDefinirSenha,
   SENHA_ADMIN, SEGREDO
 };
