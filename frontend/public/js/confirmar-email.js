@@ -5,7 +5,7 @@ const conteudo = document.getElementById('conteudo');
 function mostrarErro(mensagem) {
   conteudo.innerHTML = `
     <div class="vazio">
-      <strong>Nao foi possivel confirmar</strong>
+      <strong>Não foi possível confirmar</strong>
       ${esc(mensagem)}
     </div>
     <a class="btn btn-primary mt-3" href="login.html">Ir para o login</a>`;
@@ -21,7 +21,7 @@ function mostrarSucesso(nome) {
 (async () => {
   const token = parametro('token');
   if (!token) {
-    mostrarErro('Link incompleto. Confira se copiou o endereco inteiro do e-mail.');
+    mostrarErro('Link incompleto. Confira se copiou o endereço inteiro do e-mail.');
     return;
   }
 

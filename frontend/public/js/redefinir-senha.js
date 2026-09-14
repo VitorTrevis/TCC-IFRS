@@ -10,7 +10,7 @@ function mostrarPasso(passo) {
 
 if (!token) {
   document.getElementById('texto-invalido').textContent =
-    'Link incompleto. Confira se copiou o endereco inteiro do e-mail.';
+    'Link incompleto. Confira se copiou o endereço inteiro do e-mail.';
   mostrarPasso('passo-invalido');
 }
 
@@ -18,7 +18,7 @@ async function redefinir() {
   const senha = document.getElementById('nova-senha').value;
   const confirmar = document.getElementById('confirmar-nova-senha').value;
   if (!senha || String(senha).length < 6) { avisar('A senha precisa ter pelo menos 6 caracteres.', 'erro'); return; }
-  if (senha !== confirmar) { avisar('As senhas nao sao iguais.', 'erro'); return; }
+  if (senha !== confirmar) { avisar('As senhas não são iguais.', 'erro'); return; }
 
   try {
     const r = await api.redefinirSenha(token, senha, confirmar);

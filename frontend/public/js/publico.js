@@ -11,10 +11,10 @@ function cabecalho(c) {
           <h1 class="mb-1">${esc(c.nome)}<span class="ponto">.</span></h1>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             ${etiqueta(c.status)}
-            ${c.data_inicio ? `<span class="small">de ${esc(dataBR(c.data_inicio))}${c.data_fim ? ` ate ${esc(dataBR(c.data_fim))}` : ''}</span>` : ''}
+            ${c.data_inicio ? `<span class="small">de ${esc(dataBR(c.data_inicio))}${c.data_fim ? ` até ${esc(dataBR(c.data_fim))}` : ''}</span>` : ''}
           </div>
         </div>
-        <button class="btn btn-outline-light btn-sm" id="btn-link">Copiar link desta pagina</button>
+        <button class="btn btn-outline-light btn-sm" id="btn-link">Copiar link desta página</button>
       </div>
     </section>`;
 }
@@ -22,8 +22,8 @@ function cabecalho(c) {
 function jogos(dados) {
   const partidas = dados.partidas;
   if (!partidas.length) {
-    return `<div class="vazio"><strong>A tabela ainda nao foi gerada</strong>
-      Assim que a coordenacao gerar os jogos, eles aparecem aqui.</div>`;
+    return `<div class="vazio"><strong>A tabela ainda não foi gerada</strong>
+      Assim que a coordenação gerar os jogos, eles aparecem aqui.</div>`;
   }
 
   const porFase = agruparPartidas(partidas);
@@ -74,8 +74,8 @@ function jogos(dados) {
 
 function classificacaoHtml(dados) {
   if (!dados.classificacao.length) {
-    return `<div class="vazio"><strong>Este campeonato e so de mata-mata</strong>
-      Nao existe tabela de pontos: acompanhe a chave na aba Jogos.</div>`;
+    return `<div class="vazio"><strong>Este campeonato é só de mata-mata</strong>
+      Não existe tabela de pontos: acompanhe a chave na aba Jogos.</div>`;
   }
   const classificados = dados.campeonato.formato === 'grupos_mata_mata'
     ? dados.campeonato.classificados_grupo : 0;
@@ -83,7 +83,7 @@ function classificacaoHtml(dados) {
   return dados.classificacao.map((bloco) => `
     <section class="cartao mb-3">
       <div class="cartao-cabecalho">
-        <h2 class="h6 mb-0">${bloco.grupo ? `Grupo ${esc(bloco.grupo)}` : 'Classificacao geral'}</h2>
+        <h2 class="h6 mb-0">${bloco.grupo ? `Grupo ${esc(bloco.grupo)}` : 'Classificação geral'}</h2>
         <span class="sobrancelha">P = pontos &middot; SG = saldo</span>
       </div>
       <div class="cartao-corpo">${tabelaClassificacao(bloco.tabela, classificados)}</div>
@@ -93,7 +93,7 @@ function classificacaoHtml(dados) {
 async function carregar() {
   if (!id) {
     document.getElementById('cabecalho').innerHTML =
-      '<div class="vazio"><strong>Campeonato nao informado</strong>Volte para a lista e escolha um campeonato.</div>';
+      '<div class="vazio"><strong>Campeonato não informado</strong>Volte para a lista e escolha um campeonato.</div>';
     return;
   }
   document.getElementById('aba-jogos').innerHTML = carregador('Carregando o campeonato');
@@ -119,7 +119,7 @@ async function carregar() {
     };
   } catch (e) {
     document.getElementById('cabecalho').innerHTML =
-      `<div class="vazio"><strong>Nao deu para carregar</strong>${esc(e.message)}</div>`;
+      `<div class="vazio"><strong>Não deu para carregar</strong>${esc(e.message)}</div>`;
   }
 }
 

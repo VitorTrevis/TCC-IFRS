@@ -14,12 +14,12 @@ const SENHA_ADMIN = process.env.ADMIN_PASSWORD || 'ifrs2026';
 
 const NOMES = [
   'Ana Clara', 'Bruno Rocha', 'Caio Dalcin', 'Daniel Souza', 'Eduarda Lima',
-  'Felipe Antunes', 'Gabriel Moro', 'Helena Prado', 'Igor Bassani', 'Julia Meneghel',
-  'Kaue Ferreira', 'Larissa Boff', 'Matheus Zanini', 'Nicolas Perin', 'Otavio Grazzi',
+  'Felipe Antunes', 'Gabriel Moro', 'Helena Prado', 'Igor Bassani', 'Júlia Meneghel',
+  'Kauê Ferreira', 'Larissa Boff', 'Matheus Zanini', 'Nicolas Perin', 'Otávio Grazzi',
   'Paula Bertolin', 'Rafael Sartori', 'Sofia Tonet', 'Thiago Menegotto', 'Vitor Salton',
-  'Yasmin Carraro', 'Arthur Bortolin', 'Beatriz Comin', 'Cesar Fontana', 'Diego Marin',
-  'Elisa Panozzo', 'Fabio Ceron', 'Giovana Slongo', 'Henrique Basso', 'Isadora Vieira',
-  'Joao Pedro Rech', 'Karina Debon', 'Lucas Paese', 'Marina Severgnini', 'Nathan Cioato'
+  'Yasmin Carraro', 'Arthur Bortolin', 'Beatriz Comin', 'César Fontana', 'Diego Marin',
+  'Elisa Panozzo', 'Fábio Ceron', 'Giovana Slongo', 'Henrique Basso', 'Isadora Vieira',
+  'João Pedro Rech', 'Karina Debon', 'Lucas Paese', 'Marina Severgnini', 'Nathan Cioato'
 ];
 
 let indiceNome = 0;
@@ -47,14 +47,14 @@ function criarCampeonato(dados) {
   }).lastInsertRowid;
 }
 
-/** Cria um aluno pre-cadastrado manualmente pela coordenacao (excecao: sem e-mail,
- *  sem senha ate o primeiro acesso). */
+/** Cria um aluno pré-cadastrado manualmente pela coordenação (exceção: sem e-mail,
+ *  sem senha até o primeiro acesso). */
 function criarAluno(nome) {
   return db.prepare('INSERT INTO alunos (nome) VALUES (?)').run(nome).lastInsertRowid;
 }
 
-/** Cria um aluno pelo caminho normal: autocadastro com e-mail institucional ja
- *  verificado e senha definida (simula quem ja passou pelo fluxo completo). */
+/** Cria um aluno pelo caminho normal: autocadastro com e-mail institucional já
+ *  verificado e senha definida (simula quem já passou pelo fluxo completo). */
 function criarAlunoAutocadastrado(nome, email, senha) {
   return db.prepare(`
     INSERT INTO alunos (nome, email, senha_hash, email_verificado)
@@ -64,7 +64,7 @@ function criarAlunoAutocadastrado(nome, email, senha) {
 
 /**
  * Cria um time com elenco. `fixos` entra primeiro (usado para os alunos de
- * demonstracao), o resto e preenchido com nomes genericos ate `qtdJogadores`.
+ * demonstração), o resto é preenchido com nomes genéricos até `qtdJogadores`.
  */
 function criarTimeComElenco(idCampeonato, nome, qtdJogadores, fixos = []) {
   const idTime = db.prepare('INSERT INTO times (nome, id_campeonato) VALUES (?, ?)')
@@ -83,7 +83,7 @@ function criarTimeComElenco(idCampeonato, nome, qtdJogadores, fixos = []) {
   return { idTime, idsFixos };
 }
 
-/** Lanca um placar do mesmo jeito que a API faria, inclusive avancando a chave. */
+/** Lança um placar do mesmo jeito que a API faria, inclusive avançando a chave. */
 function lancarResultado(idPartida, golsA, golsB, penaltisA = null, penaltisB = null) {
   const p = db.prepare('SELECT * FROM partidas WHERE id = ?').get(idPartida);
   const elenco = (idTime) => db.prepare('SELECT id FROM jogadores WHERE id_time = ?').all(idTime);
@@ -125,9 +125,9 @@ function placarAleatorio() {
 }
 
 /**
- * Transfere o credito de um gol (ja contado no placar) para `idJogadorNovo`,
+ * Transfere o crédito de um gol (já contado no placar) para `idJogadorNovo`,
  * sem alterar o placar da partida. Usado para garantir que os alunos de
- * demonstracao tenham estatisticas visiveis sem mexer nos resultados.
+ * demonstração tenham estatísticas visíveis sem mexer nos resultados.
  */
 function creditarGolPara(idPartida, idJogadorNovo, idTime) {
   const p = db.prepare('SELECT * FROM partidas WHERE id = ?').get(idPartida);
@@ -153,16 +153,16 @@ function creditarGolPara(idPartida, idJogadorNovo, idTime) {
 console.log(`Limpando ${ARQUIVO_DB} ...`);
 limparTudo();
 
-// ---- Alunos de demonstracao ------------------------------------------------
-// Vitor: caminho normal (autocadastro com e-mail institucional, ja verificado).
-// Ramiro: excecao (pre-cadastro manual pela coordenacao, sem e-mail, primeiro
+// ---- Alunos de demonstração ------------------------------------------------
+// Vitor: caminho normal (autocadastro com e-mail institucional, já verificado).
+// Ramiro: exceção (pré-cadastro manual pela coordenação, sem e-mail, primeiro
 // acesso ainda pendente) — mostra os dois fluxos funcionando no mesmo seed.
 const idVitor = criarAlunoAutocadastrado(
   'Vitor Trevisan', 'vitor.trevisan@aluno.farroupilha.ifrs.edu.br', 'vitor123'
 );
 const idRamiro = criarAluno('Ramiro Severgnini');
 
-// ---- Campeonato 1: pontos corridos, com metade das rodadas ja jogadas -----
+// ---- Campeonato 1: pontos corridos, com metade das rodadas já jogadas -----
 const futsal = criarCampeonato({
   nome: 'Interclasses de Futsal 2026',
   modalidade: 'Futsal',
@@ -171,14 +171,14 @@ const futsal = criarCampeonato({
   data_fim: '2026-04-24'
 });
 
-const { idsFixos } = criarTimeComElenco(futsal, '1A Informatica', 5, [
+const { idsFixos } = criarTimeComElenco(futsal, '1A Informática', 5, [
   { nome: 'Vitor Trevisan', numero: 10, id_aluno: idVitor },
   { nome: 'Ramiro Severgnini', numero: 7, id_aluno: idRamiro }
 ]);
 const [idJogadorVitor, idJogadorRamiro] = idsFixos;
-const idTime1A = db.prepare('SELECT id FROM times WHERE id_campeonato = ? AND nome = ?').get(futsal, '1A Informatica').id;
+const idTime1A = db.prepare('SELECT id FROM times WHERE id_campeonato = ? AND nome = ?').get(futsal, '1A Informática').id;
 
-['1B Informatica', '2A Informatica', '2B Informatica', '3A Informatica', '3B Informatica']
+['1B Informática', '2A Informática', '2B Informática', '3A Informática', '3B Informática']
   .forEach((nome) => criarTimeComElenco(futsal, nome, 5));
 
 gerarTabela(db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(futsal));
@@ -195,7 +195,7 @@ for (const p of rodadasFutsal) {
 }
 db.prepare("UPDATE campeonatos SET status = 'em_andamento' WHERE id = ?").run(futsal);
 
-// garante gols visiveis para Vitor e Ramiro sem alterar nenhum placar
+// garante gols visíveis para Vitor e Ramiro sem alterar nenhum placar
 const partidasDoTime1A = db.prepare(`
   SELECT * FROM partidas
   WHERE id_campeonato = ? AND status = 'finalizada' AND (id_time_a = ? OR id_time_b = ?)
@@ -207,10 +207,10 @@ for (const p of partidasDoTime1A) {
   if (creditarGolPara(p.id, idJogadorRamiro, idTime1A)) break;
 }
 
-// ---- Campeonato 2: mata-mata com numero impar de times (mostra o bye) -----
+// ---- Campeonato 2: mata-mata com número ímpar de times (mostra o bye) -----
 const volei = criarCampeonato({
-  nome: 'Copa Interseries de Volei 2026',
-  modalidade: 'Volei',
+  nome: 'Copa Interseries de Vôlei 2026',
+  modalidade: 'Vôlei',
   formato: 'mata_mata',
   data_inicio: '2026-05-11'
 });
@@ -220,7 +220,7 @@ const volei = criarCampeonato({
 
 gerarTabela(db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(volei));
 
-// joga so a fase de abertura da chave, deixando a semifinal em aberto
+// joga só a fase de abertura da chave, deixando a semifinal em aberto
 const faseAbertura = db.prepare(`
   SELECT fase FROM partidas WHERE id_campeonato = ?
   GROUP BY fase ORDER BY COUNT(*) DESC LIMIT 1
@@ -246,10 +246,10 @@ console.log(`  jogadores:   ${conta('jogadores')}`);
 console.log(`  partidas:    ${conta('partidas')}`);
 console.log(`  gols:        ${conta('gols')}`);
 console.log('');
-console.log('Senha da coordenacao (admin):');
+console.log('Senha da coordenação (admin):');
 console.log(`  ${SENHA_ADMIN}`);
 console.log('');
-console.log('Alunos de demonstracao:');
+console.log('Alunos de demonstração:');
 console.log('  Vitor Trevisan  — login: vitor.trevisan@aluno.farroupilha.ifrs.edu.br / senha: vitor123');
-console.log('  Ramiro Severgnini — pre-cadastro manual (excecao), sem senha ainda: define no "Fui cadastrado pela coordenacao"');
+console.log('  Ramiro Severgnini — pré-cadastro manual (exceção), sem senha ainda: define no "Fui cadastrado pela coordenação"');
 console.log('');

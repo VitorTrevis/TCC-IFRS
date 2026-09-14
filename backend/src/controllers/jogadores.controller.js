@@ -6,28 +6,28 @@ const { falha } = require('../middlewares/erros');
 
 function timeOuFalha(id) {
   const t = Time.porId(id);
-  if (!t) falha(404, 'Time nao encontrado.');
+  if (!t) falha(404, 'Time não encontrado.');
   return t;
 }
 
 function numeroValido(valor) {
   if (valor === undefined || valor === null || valor === '') return null;
   const n = Number(valor);
-  if (!Number.isInteger(n) || n < 0 || n > 999) falha(400, 'O numero da camisa precisa ser um inteiro de 0 a 999.');
+  if (!Number.isInteger(n) || n < 0 || n > 999) falha(400, 'O número da camisa precisa ser um inteiro de 0 a 999.');
   return n;
 }
 
-/** Resolve o vinculo com aluno: usa id_aluno existente, ou cria um aluno novo se pedido. */
+/** Resolve o vínculo com aluno: usa id_aluno existente, ou cria um aluno novo se pedido. */
 function resolverIdAluno(corpo) {
   if (corpo.id_aluno) {
     const aluno = Aluno.porId(corpo.id_aluno);
-    if (!aluno) falha(400, 'O aluno informado nao existe.');
+    if (!aluno) falha(400, 'O aluno informado não existe.');
     return aluno.id;
   }
   const nomeNovo = (corpo.aluno_novo_nome || '').toString().trim();
   if (nomeNovo) {
     if (Aluno.existeNome(nomeNovo)) {
-      falha(400, `Ja existe um aluno pre-cadastrado como "${nomeNovo}". Selecione-o na busca em vez de criar de novo.`);
+      falha(400, `Já existe um aluno pré-cadastrado como "${nomeNovo}". Selecione-o na busca em vez de criar de novo.`);
     }
     return Aluno.criar(nomeNovo);
   }
@@ -55,12 +55,12 @@ function criar(req, res) {
 
 function atualizar(req, res) {
   const jogador = Jogador.porId(req.params.id);
-  if (!jogador) falha(404, 'Jogador nao encontrado.');
+  if (!jogador) falha(404, 'Jogador não encontrado.');
   const nome = (req.body?.nome || '').toString().trim();
   if (!nome) falha(400, 'Informe o nome do jogador.');
 
-  // so mexe no vinculo com aluno se o pedido trouxer id_aluno/aluno_novo_nome;
-  // caso contrario preserva o vinculo atual (evita apagar sem querer ao so
+  // só mexe no vínculo com aluno se o pedido trouxer id_aluno/aluno_novo_nome;
+  // caso contrário preserva o vínculo atual (evita apagar sem querer ao só
   // renomear o jogador).
   const veioAlgumCampoDeAluno = req.body?.id_aluno !== undefined || req.body?.aluno_novo_nome !== undefined;
   const id_aluno = veioAlgumCampoDeAluno ? resolverIdAluno(req.body || {}) : jogador.id_aluno;
@@ -77,7 +77,7 @@ function atualizar(req, res) {
 
 function remover(req, res) {
   const jogador = Jogador.porId(req.params.id);
-  if (!jogador) falha(404, 'Jogador nao encontrado.');
+  if (!jogador) falha(404, 'Jogador não encontrado.');
   Jogador.remover(jogador.id);
   Historico.registrar({
     nome: req.admin.nome, acao: 'remover', entidade: 'jogador', entidade_id: jogador.id,

@@ -5,8 +5,8 @@ const { falha } = require('../middlewares/erros');
 const { classificacao, artilheiros } = require('../services/classificacao.service');
 
 /**
- * Endpoint unico, sem login, com tudo que a pagina publica precisa (RF07).
- * Uma requisicao so evita quatro chamadas em sequencia no celular do aluno.
+ * Endpoint único, sem login, com tudo que a página pública precisa (RF07).
+ * Uma requisição só evita quatro chamadas em sequência no celular do aluno.
  */
 function verCampeonato(req, res) {
   const campeonato = Campeonato.porId(req.params.id);

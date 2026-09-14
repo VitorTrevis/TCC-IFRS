@@ -1,7 +1,7 @@
 const { db } = require('../db');
 
-/** Grava uma linha no historico. Chamado pelos controllers logo apos a
- *  acao de escrita ter sido confirmada no banco. */
+/** Grava uma linha no histórico. Chamado pelos controllers logo após a
+ *  ação de escrita ter sido confirmada no banco. */
 const registrar = ({ nome, acao, entidade, entidade_id, descricao }) => db.prepare(`
   INSERT INTO historico (nome, acao, entidade, entidade_id, descricao)
   VALUES (?, ?, ?, ?, ?)

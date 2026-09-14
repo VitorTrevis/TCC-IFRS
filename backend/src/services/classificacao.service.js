@@ -1,14 +1,14 @@
 /**
- * Classificacao (RF05) e artilharia (RF06).
+ * Classificação (RF05) e artilharia (RF06).
  *
- * A classificacao NUNCA e digitada nem armazenada: e recalculada a partir das
- * partidas finalizadas toda vez que alguem pede. Isso elimina qualquer chance
+ * A classificação NUNCA é digitada nem armazenada: é recalculada a partir das
+ * partidas finalizadas toda vez que alguém pede. Isso elimina qualquer chance
  * de a tabela ficar dessincronizada do placar.
  *
- * Criterios de desempate (padrao CBF):
- *   1. Pontos (V=3, E=1, D=0)   2. Vitorias   3. Saldo de gols
- *   4. Gols pro                 5. Confronto direto (mini tabela entre os empatados)
- *   6. Ordem alfabetica
+ * Critérios de desempate (padrão CBF):
+ *   1. Pontos (V=3, E=1, D=0)   2. Vitórias   3. Saldo de gols
+ *   4. Gols pró                 5. Confronto direto (mini tabela entre os empatados)
+ *   6. Ordem alfabética
  */
 
 const { db } = require('../db');
@@ -62,8 +62,8 @@ function confrontoDireto(partidas, ids) {
 }
 
 /**
- * Classificacao de um grupo. `grupo` = null significa "todos os times do
- * campeonato numa tabela so" (formato pontos corridos).
+ * Classificação de um grupo. `grupo` = null significa "todos os times do
+ * campeonato numa tabela só" (formato pontos corridos).
  */
 function classificacaoDoGrupo(idCampeonato, grupo = null) {
   const times = grupo === null
@@ -88,7 +88,7 @@ function classificacaoDoGrupo(idCampeonato, grupo = null) {
     l.aproveitamento = l.jogos ? Math.round((l.pontos / (l.jogos * 3)) * 100) : 0;
   }
 
-  // Criterios 1 a 4
+  // Critérios 1 a 4
   linhas.sort((x, y) =>
     y.pontos - x.pontos ||
     y.vitorias - x.vitorias ||
@@ -96,7 +96,7 @@ function classificacaoDoGrupo(idCampeonato, grupo = null) {
     y.gols_pro - x.gols_pro
   );
 
-  // Criterio 5 e 6 dentro de cada bloco ainda empatado
+  // Critério 5 e 6 dentro de cada bloco ainda empatado
   const iguais = (x, y) => x.pontos === y.pontos && x.vitorias === y.vitorias
     && x.saldo === y.saldo && x.gols_pro === y.gols_pro;
 
@@ -124,7 +124,7 @@ function classificacaoDoGrupo(idCampeonato, grupo = null) {
   return linhas;
 }
 
-/** Classificacao completa: uma tabela por grupo, ou tabela unica. */
+/** Classificação completa: uma tabela por grupo, ou tabela única. */
 function classificacao(idCampeonato) {
   const campeonato = db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(idCampeonato);
   if (!campeonato) return [];

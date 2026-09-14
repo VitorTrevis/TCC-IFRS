@@ -16,7 +16,7 @@ let partidaAberta = null;
 
 const el = (i) => document.getElementById(i);
 
-// ---------------------------------------------------------------- cabecalho
+// ---------------------------------------------------------------- cabeçalho
 function renderCabecalho() {
   el('cabecalho').innerHTML = `
     <section class="capa">
@@ -27,14 +27,14 @@ function renderCabecalho() {
           ${etiqueta(campeonato.status)}
         </div>
         <div class="d-flex gap-2 flex-wrap">
-          <a class="btn btn-outline-light btn-sm" href="campeonato.html?id=${campeonato.id}" target="_blank" rel="noopener">Ver pagina publica</a>
+          <a class="btn btn-outline-light btn-sm" href="campeonato.html?id=${campeonato.id}" target="_blank" rel="noopener">Ver página pública</a>
           <button class="btn btn-outline-danger btn-sm" id="btn-excluir">Excluir campeonato</button>
         </div>
       </div>
     </section>`;
 
   el('btn-excluir').onclick = async () => {
-    if (!(await confirmarAcao(`Excluir "${campeonato.nome}"? Times, jogos e placares vao junto.`, 'Excluir campeonato'))) return;
+    if (!(await confirmarAcao(`Excluir "${campeonato.nome}"? Times, jogos e placares vão junto.`, 'Excluir campeonato'))) return;
     try {
       await api.removerCampeonato(campeonato.id);
       location.href = 'index.html';
@@ -206,7 +206,7 @@ function renderPartidas() {
     return `<div class="jogo-marcadores">
       <button class="btn btn-sm ${p.status === 'finalizada' ? 'btn-outline-secondary' : 'btn-primary'}"
               data-placar="${p.id}">
-        ${p.status === 'finalizada' ? 'Editar placar' : 'Lancar placar'}
+        ${p.status === 'finalizada' ? 'Editar placar' : 'Lançar placar'}
       </button></div>`;
   };
 
@@ -237,7 +237,7 @@ function renderPartidas() {
   if (chave) el('chave').innerHTML = chave;
 }
 
-// --------------------------------------------------------------- lancar placar
+// --------------------------------------------------------------- lançar placar
 async function abrirPlacar(idPartida) {
   partidaAberta = partidas.find((p) => p.id === idPartida);
   const p = partidaAberta;
@@ -258,7 +258,7 @@ async function abrirPlacar(idPartida) {
           <input class="form-control form-control-sm" style="width:64px" type="number" min="0" max="99"
                  id="jog-${j.id}" data-lado="${ladoId}" value="${golsAtuais.get(j.id) || 0}">
         </div>`).join('')
-        : '<div class="text-muted small">Sem jogadores cadastrados. O placar funciona, mas nao entra na artilharia.</div>'}
+        : '<div class="text-muted small">Sem jogadores cadastrados. O placar funciona, mas não entra na artilharia.</div>'}
     </div>`;
 
   const empateEliminatoria = p.fase !== 'grupos';
@@ -270,15 +270,15 @@ async function abrirPlacar(idPartida) {
     </div>
     ${empateEliminatoria ? `
       <div class="row g-3 mt-1 ${p.gols_a === p.gols_b && p.status === 'finalizada' ? '' : 'd-none'}" id="linha-penaltis">
-        <div class="col-12"><div class="sobrancelha">Penaltis (obrigatorio em caso de empate)</div></div>
+        <div class="col-12"><div class="sobrancelha">Pênaltis (obrigatório em caso de empate)</div></div>
         <div class="col-6"><input class="form-control" type="number" min="0" id="pen-a"
-             value="${p.penaltis_a ?? 0}" aria-label="Penaltis ${esc(p.time_a)}"></div>
+             value="${p.penaltis_a ?? 0}" aria-label="Pênaltis ${esc(p.time_a)}"></div>
         <div class="col-6"><input class="form-control" type="number" min="0" id="pen-b"
-             value="${p.penaltis_b ?? 0}" aria-label="Penaltis ${esc(p.time_b)}"></div>
+             value="${p.penaltis_b ?? 0}" aria-label="Pênaltis ${esc(p.time_b)}"></div>
       </div>` : ''}
     <p class="text-muted small mt-3 mb-0">
       Ao marcar os gols de cada jogador o placar acima se ajusta sozinho.
-      Gol contra: deixe os jogadores zerados e escreva o placar na mao.
+      Gol contra: deixe os jogadores zerados e escreva o placar na mão.
     </p>`;
 
   // gols por jogador atualizam o placar do lado correspondente
@@ -325,7 +325,7 @@ el('btn-salvar-placar').onclick = async () => {
   try {
     await api.registrarResultado(p.id, corpo);
     modalPlacar.hide();
-    avisar('Placar salvo. Classificacao atualizada.', 'sucesso');
+    avisar('Placar salvo. Classificação atualizada.', 'sucesso');
     await recarregar();
   } catch (e) { avisar(e.message, 'erro'); }
 };
@@ -339,10 +339,10 @@ el('btn-apagar-placar').onclick = async () => {
   } catch (e) { avisar(e.message, 'erro'); }
 };
 
-// -------------------------------------------------------------- classificacao
+// -------------------------------------------------------------- classificação
 function renderClassificacao(blocos) {
   if (!blocos.length) {
-    el('classificacao').innerHTML = '<div class="vazio">Mata-mata puro nao tem tabela de pontos.</div>';
+    el('classificacao').innerHTML = '<div class="vazio">Mata-mata puro não tem tabela de pontos.</div>';
     return;
   }
   const classificados = campeonato.formato === 'grupos_mata_mata' ? campeonato.classificados_grupo : 0;
@@ -366,7 +366,7 @@ async function recarregar(tudo = true) {
 (async () => {
   if (!id) {
     document.querySelector('main').innerHTML =
-      '<div class="vazio"><strong>Campeonato nao informado</strong>Volte para a lista de campeonatos.</div>';
+      '<div class="vazio"><strong>Campeonato não informado</strong>Volte para a lista de campeonatos.</div>';
     return;
   }
   try {
@@ -374,6 +374,6 @@ async function recarregar(tudo = true) {
     document.title = `${campeonato.nome} - Painel`;
   } catch (e) {
     document.querySelector('main').innerHTML =
-      `<div class="vazio"><strong>Nao deu para carregar</strong>${esc(e.message)}</div>`;
+      `<div class="vazio"><strong>Não deu para carregar</strong>${esc(e.message)}</div>`;
   }
 })();

@@ -41,13 +41,13 @@ const resetarSenha = (id) =>
 
 // ------------------------------------------------ autocadastro por e-mail
 
-/** Busca por e-mail (normalizado em caixa baixa — e-mail nao tem acento a tratar). */
+/** Busca por e-mail (normalizado em caixa baixa — e-mail não tem acento a tratar). */
 const porEmail = (email) => db.prepare('SELECT * FROM alunos WHERE email = ?')
   .get(String(email || '').trim().toLowerCase());
 
 const existeEmail = (email) => Boolean(porEmail(email));
 
-/** Cria a conta ja com senha e token de verificacao pendente (email_verificado = 0). */
+/** Cria a conta já com senha e token de verificação pendente (email_verificado = 0). */
 function criarComEmail({ nome, email, senha_hash, tokenHash, expiraEm }) {
   return db.prepare(`
     INSERT INTO alunos (nome, email, senha_hash, email_verificado, token_verificacao, token_expira)
@@ -55,12 +55,12 @@ function criarComEmail({ nome, email, senha_hash, tokenHash, expiraEm }) {
   `).run(nome.trim(), String(email).trim().toLowerCase(), senha_hash, tokenHash, expiraEm).lastInsertRowid;
 }
 
-/** Troca o token pendente (usado tanto na criacao quanto no reenvio). */
+/** Troca o token pendente (usado tanto na criação quanto no reenvio). */
 const atualizarTokenVerificacao = (id, tokenHash, expiraEm) =>
   db.prepare('UPDATE alunos SET token_verificacao = ?, token_expira = ? WHERE id = ?')
     .run(tokenHash, expiraEm, id);
 
-/** So retorna a conta se o hash bater E o token ainda nao tiver expirado. */
+/** Só retorna a conta se o hash bater E o token ainda não tiver expirado. */
 const porTokenValido = (tokenHash) => db.prepare(`
   SELECT * FROM alunos
   WHERE token_verificacao = ? AND token_expira IS NOT NULL AND token_expira > datetime('now')
@@ -72,21 +72,21 @@ const marcarEmailVerificado = (id) => db.prepare(`
 
 // ------------------------------------------- esqueci minha senha (por e-mail)
 
-/** Grava o token pendente de redefinicao de senha (substitui qualquer um anterior). */
+/** Grava o token pendente de redefinição de senha (substitui qualquer um anterior). */
 const definirTokenReset = (id, tokenHash, expiraEm) =>
   db.prepare('UPDATE alunos SET token_reset_senha = ?, token_reset_expira = ? WHERE id = ?')
     .run(tokenHash, expiraEm, id);
 
-/** So retorna a conta se o hash bater E o token ainda nao tiver expirado. */
+/** Só retorna a conta se o hash bater E o token ainda não tiver expirado. */
 const porTokenResetValido = (tokenHash) => db.prepare(`
   SELECT * FROM alunos
   WHERE token_reset_senha = ? AND token_reset_expira IS NOT NULL AND token_reset_expira > datetime('now')
 `).get(tokenHash);
 
-/** Define a nova senha e invalida o token (uso unico). Tambem marca o e-mail como
- *  verificado: clicar num link mandado para essa caixa de entrada e a mesma prova
- *  de posse usada na confirmacao de cadastro, entao cobre o caso raro de alguem
- *  pedir redefinicao antes de ter confirmado o cadastro original. */
+/** Define a nova senha e invalida o token (uso único). Também marca o e-mail como
+ *  verificado: clicar num link mandado para essa caixa de entrada é a mesma prova
+ *  de posse usada na confirmação de cadastro, então cobre o caso raro de alguém
+ *  pedir redefinição antes de ter confirmado o cadastro original. */
 const redefinirSenhaComToken = (id, senha_hash) => db.prepare(`
   UPDATE alunos SET senha_hash = ?, email_verificado = 1,
     token_reset_senha = NULL, token_reset_expira = NULL WHERE id = ?

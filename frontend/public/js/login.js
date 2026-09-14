@@ -5,9 +5,9 @@ if (Sessao.logado) location.href = Sessao.ehAluno ? 'painel-aluno.html' : 'index
 const destinoAdmin = () => parametro('voltar') || 'index.html';
 const destinoAluno = () => 'painel-aluno.html';
 
-let alunoEmAndamento = null; // { id, nome, tem_senha } — so usado no fluxo manual (pre-cadastro)
+let alunoEmAndamento = null; // { id, nome, tem_senha } — só usado no fluxo manual (pré-cadastro)
 
-// -------------------------------------------------------------- navegacao
+// -------------------------------------------------------------- navegação
 
 function mostrar(idParaMostrar) {
   ['escolha-papel', 'cartao-aluno', 'cartao-admin'].forEach((id) => {
@@ -17,7 +17,7 @@ function mostrar(idParaMostrar) {
 
 const PASSOS_EMAIL = ['passo-entrar-email', 'passo-cadastro', 'passo-cadastro-enviado', 'passo-reenviar', 'passo-esqueci-senha'];
 
-/** Passos dentro do cartao do aluno (e-mail): entrar, cadastro, confirmacao enviada, reenviar, esqueci-senha. */
+/** Passos dentro do cartão do aluno (e-mail): entrar, cadastro, confirmação enviada, reenviar, esqueci-senha. */
 function mostrarPassoEmail(passo) {
   PASSOS_EMAIL.forEach((id) => {
     document.getElementById(id).classList.toggle('d-none', id !== passo);
@@ -100,7 +100,7 @@ async function criarConta() {
 }
 document.getElementById('btn-criar-conta').onclick = criarConta;
 
-// ---------------------------------------------------- reenviar confirmacao
+// ---------------------------------------------------- reenviar confirmação
 
 async function reenviarConfirmacao() {
   const email = document.getElementById('r-email').value.trim();
@@ -140,8 +140,8 @@ async function buscarAluno() {
     const caixa = document.getElementById('resultado-busca-aluno');
 
     if (!resultados.length) {
-      caixa.innerHTML = `<div class="vazio"><strong>Nao encontramos esse nome</strong>
-        Confira a grafia ou fale com a coordenacao para o pre-cadastro.</div>`;
+      caixa.innerHTML = `<div class="vazio"><strong>Não encontramos esse nome</strong>
+        Confira a grafia ou fale com a coordenação para o pré-cadastro.</div>`;
       return;
     }
 
@@ -213,7 +213,7 @@ async function entrarAdmin() {
   const nome = document.getElementById('nome-admin').value.trim();
   const senha = document.getElementById('senha-admin').value;
   if (!nome) { avisar('Digite seu nome.', 'erro'); document.getElementById('nome-admin').focus(); return; }
-  if (!senha) { avisar('Digite a senha da coordenacao.', 'erro'); return; }
+  if (!senha) { avisar('Digite a senha da coordenação.', 'erro'); return; }
   try {
     const r = await api.loginAdmin(senha, nome);
     Sessao.entrarComoAdmin(r.token, r.nome);

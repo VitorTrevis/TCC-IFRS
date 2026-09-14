@@ -5,16 +5,16 @@ const { exigirAdmin, exigirAluno, limitarCadastroAluno, limitarReenvioConfirmaca
 
 const router = Router();
 
-// Publico: autocadastro por e-mail institucional (caminho principal)
+// Público: autocadastro por e-mail institucional (caminho principal)
 router.post('/cadastro', limitarCadastroAluno, rota(c.cadastrarPorEmail));
 router.get('/confirmar-email', rota(c.confirmarEmail));
 router.post('/reenviar-confirmacao', limitarReenvioConfirmacao, rota(c.reenviarConfirmacao));
 
-// Publico: esqueci minha senha (autocadastro por e-mail)
+// Público: esqueci minha senha (autocadastro por e-mail)
 router.post('/esqueci-senha', limitarEsqueciSenha, rota(c.esqueciSenha));
 router.post('/redefinir-senha', rota(c.redefinirSenha));
 
-// Publico: fluxo de login (aceita e-mail OU id/nome de pre-cadastro manual)
+// Público: fluxo de login (aceita e-mail OU id/nome de pré-cadastro manual)
 router.get('/buscar', rota(c.buscar));
 router.post('/:id/definir-senha', rota(c.definirSenha));
 router.post('/login', rota(c.entrar));
@@ -22,7 +22,7 @@ router.post('/login', rota(c.entrar));
 // Exclusivo do aluno logado
 router.get('/eu/estatisticas', exigirAluno, rota(c.minhasEstatisticas));
 
-// Exclusivo da coordenacao
+// Exclusivo da coordenação
 router.get('/', exigirAdmin, rota(c.listar));
 router.post('/', exigirAdmin, rota(c.criar));
 router.post('/:id/resetar-senha', exigirAdmin, rota(c.resetarSenha));

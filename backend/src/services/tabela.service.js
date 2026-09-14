@@ -1,12 +1,12 @@
 /**
- * Geracao automatica da tabela de jogos (RF03).
+ * Geração automática da tabela de jogos (RF03).
  *
- * Tres formatos:
- *  - pontos_corridos    : algoritmo do circulo (round-robin), com bye se impar
- *  - mata_mata          : chaveamento eliminatorio com byes distribuidos por seed
- *  - grupos_mata_mata   : grupos em pontos corridos + chave eliminatoria ja montada
+ * Três formatos:
+ *  - pontos_corridos    : algoritmo do círculo (round-robin), com bye se ímpar
+ *  - mata_mata          : chaveamento eliminatório com byes distribuídos por seed
+ *  - grupos_mata_mata   : grupos em pontos corridos + chave eliminatória já montada
  *
- * Tudo e persistido na tabela `partidas`. Nada e calculado so na tela.
+ * Tudo é persistido na tabela `partidas`. Nada é calculado só na tela.
  */
 
 const { db } = require('../db');
@@ -24,12 +24,12 @@ function rotuloFase(fase) {
   const mapa = {
     grupos: 'Fase de grupos', final: 'Final', semi: 'Semifinal',
     quartas: 'Quartas de final', oitavas: 'Oitavas de final',
-    '16avos': ' 16 avos de final', '32avos': '32 avos de final'
+    '16avos': '16 avos de final', '32avos': '32 avos de final'
   };
   return mapa[fase] || fase;
 }
 
-/** Menor potencia de 2 maior ou igual a n. */
+/** Menor potência de 2 maior ou igual a n. */
 function potenciaDe2(n) {
   let p = 1;
   while (p < n) p *= 2;
@@ -37,9 +37,9 @@ function potenciaDe2(n) {
 }
 
 /**
- * Ordem classica de seeds de um chaveamento.
+ * Ordem clássica de seeds de um chaveamento.
  * Para 8: [1,8,4,5,2,7,3,6] -> os pares (1x8),(4x5),(2x7),(3x6).
- * Garante que os melhores seeds so se encontrem nas fases finais.
+ * Garante que os melhores seeds só se encontrem nas fases finais.
  */
 function ordemSeeds(tamanho) {
   let seeds = [1];
@@ -56,9 +56,9 @@ function ordemSeeds(tamanho) {
 }
 
 /**
- * Algoritmo do circulo. Recebe uma lista de itens (ids de time) e devolve
- * um array de rodadas, cada rodada e um array de pares [mandante, visitante].
- * Lista impar recebe um "bye" (null) e o time sorteado com ele descansa.
+ * Algoritmo do círculo. Recebe uma lista de itens (ids de time) e devolve
+ * um array de rodadas, cada rodada é um array de pares [mandante, visitante].
+ * Lista ímpar recebe um "bye" (null) e o time sorteado com ele descansa.
  */
 function roundRobin(itens, idaEVolta = false) {
   let lista = [...itens];
@@ -112,9 +112,9 @@ function novaPartida(dados) {
 }
 
 /**
- * Monta a arvore do mata-mata inteira de uma vez, da final para tras,
- * ligando cada partida a sua proxima. `pares` tem tamanho potencia de 2
- * e cada item e { a, b, rotuloA, rotuloB } (a/b podem ser null).
+ * Monta a árvore do mata-mata inteira de uma vez, da final para trás,
+ * ligando cada partida à sua próxima. `pares` tem tamanho potência de 2
+ * e cada item é { a, b, rotuloA, rotuloB } (a/b podem ser null).
  */
 function montarChave(idCampeonato, pares, rodadaInicial = 1) {
   const totalPrimeiraFase = pares.length;
@@ -153,7 +153,7 @@ function montarChave(idCampeonato, pares, rodadaInicial = 1) {
     idsPorNivel.push(ids);
   }
 
-  // Rotulos das fases seguintes: "Vencedor Quartas 3"
+  // Rótulos das fases seguintes: "Vencedor Quartas 3"
   for (let nivel = 0; nivel < totalNiveis - 1; nivel++) {
     const faseAnterior = rotuloFase(nomeFase(tamanhos[nivel + 1]));
     idsPorNivel[nivel].forEach((id, j) => {
@@ -165,7 +165,7 @@ function montarChave(idCampeonato, pares, rodadaInicial = 1) {
     });
   }
 
-  // Byes da primeira fase: quem nao tem adversario avanca na hora.
+  // Byes da primeira fase: quem não tem adversário avança na hora.
   const primeiraFase = idsPorNivel[totalNiveis - 1];
   for (const id of primeiraFase) {
     const p = db.prepare('SELECT * FROM partidas WHERE id = ?').get(id);
@@ -175,7 +175,7 @@ function montarChave(idCampeonato, pares, rodadaInicial = 1) {
   return idsPorNivel;
 }
 
-/** Se a partida tem exatamente um time definido e o outro lado e bye, avanca direto. */
+/** Se a partida tem exatamente um time definido e o outro lado é bye, avança direto. */
 function resolverBye(partida) {
   if (!partida) return false;
   const soUm = (partida.id_time_a && partida.rotulo_b === 'BYE' && !partida.id_time_b)
@@ -188,7 +188,7 @@ function resolverBye(partida) {
   return true;
 }
 
-/** Coloca o time vencedor no slot correspondente da proxima partida da chave. */
+/** Coloca o time vencedor no slot correspondente da próxima partida da chave. */
 function promoverVencedor(partida, idVencedor) {
   if (!partida.id_proxima_partida) return;
   const coluna = partida.slot_proxima === 'a' ? 'id_time_a' : 'id_time_b';
@@ -241,7 +241,7 @@ function gerarGruposMataMata(campeonato, times) {
   const qtdGrupos = Math.max(2, Math.ceil(times.length / porGrupo));
   const grupos = Array.from({ length: qtdGrupos }, () => []);
 
-  // Distribuicao em serpentina: equilibra o tamanho dos grupos.
+  // Distribuição em serpentina: equilibra o tamanho dos grupos.
   times.forEach((time, i) => {
     const volta = Math.floor(i / qtdGrupos);
     const pos = volta % 2 === 0 ? i % qtdGrupos : qtdGrupos - 1 - (i % qtdGrupos);
@@ -268,11 +268,11 @@ function gerarGruposMataMata(campeonato, times) {
     maiorRodada = Math.max(maiorRodada, rodadas.length);
   });
 
-  // Chave eliminatoria montada com rotulos ("1o do Grupo A") ate o fim dos grupos.
+  // Chave eliminatória montada com rótulos ("1º do Grupo A") até o fim dos grupos.
   const porGrupoClassificam = Math.max(1, campeonato.classificados_grupo || 2);
   const rotulos = [];
   for (let pos = 1; pos <= porGrupoClassificam; pos++) {
-    for (let g = 0; g < qtdGrupos; g++) rotulos.push(`${pos}o do Grupo ${LETRAS[g]}`);
+    for (let g = 0; g < qtdGrupos; g++) rotulos.push(`${pos}º do Grupo ${LETRAS[g]}`);
   }
 
   const tamanho = potenciaDe2(rotulos.length);
@@ -312,7 +312,7 @@ function gerarTabela(campeonato) {
     else if (campeonato.formato === 'mata_mata') resumo = gerarMataMata(campeonato, times);
     else if (campeonato.formato === 'grupos_mata_mata') resumo = gerarGruposMataMata(campeonato, times);
     else {
-      const erro = new Error(`Formato invalido: ${campeonato.formato}`);
+      const erro = new Error(`Formato inválido: ${campeonato.formato}`);
       erro.status = 400;
       throw erro;
     }
@@ -356,10 +356,10 @@ function preencherMataMataComClassificados(idCampeonato) {
     SELECT DISTINCT grupo FROM times WHERE id_campeonato = ? AND grupo IS NOT NULL ORDER BY grupo
   `).all(idCampeonato).map((r) => r.grupo);
 
-  const mapa = new Map(); // "1o do Grupo A" -> id do time
+  const mapa = new Map(); // "1º do Grupo A" -> id do time
   for (const letra of letras) {
     const tabela = classificacaoDoGrupo(idCampeonato, letra);
-    tabela.forEach((linha, i) => mapa.set(`${i + 1}o do Grupo ${letra}`, linha.id_time));
+    tabela.forEach((linha, i) => mapa.set(`${i + 1}º do Grupo ${letra}`, linha.id_time));
   }
 
   const atualizar = db.prepare(

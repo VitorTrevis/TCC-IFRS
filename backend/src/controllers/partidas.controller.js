@@ -7,19 +7,19 @@ const { promoverVencedor, preencherMataMataComClassificados } = require('../serv
 
 function partidaOuFalha(id) {
   const p = Partida.porId(id);
-  if (!p) falha(404, 'Partida nao encontrada.');
+  if (!p) falha(404, 'Partida não encontrada.');
   return p;
 }
 
 function inteiroNaoNegativo(valor, campo) {
   const n = Number(valor);
-  if (!Number.isInteger(n) || n < 0 || n > 999) falha(400, `${campo} precisa ser um numero inteiro de 0 a 999.`);
+  if (!Number.isInteger(n) || n < 0 || n > 999) falha(400, `${campo} precisa ser um número inteiro de 0 a 999.`);
   return n;
 }
 
 function listar(req, res) {
   const campeonato = Campeonato.porId(req.params.id);
-  if (!campeonato) falha(404, 'Campeonato nao encontrado.');
+  if (!campeonato) falha(404, 'Campeonato não encontrado.');
 
   const partidas = Partida.listarPorCampeonato(campeonato.id);
   const gols = Partida.golsPorCampeonato(campeonato.id);
@@ -42,21 +42,21 @@ function atualizarAgenda(req, res) {
   res.json(Partida.porId(p.id));
 }
 
-/** Impede editar um resultado quando a fase seguinte da chave ja foi jogada. */
+/** Impede editar um resultado quando a fase seguinte da chave já foi jogada. */
 function travarSeProximaJaJogada(partida) {
   if (!partida.id_proxima_partida) return;
   const proxima = db.prepare('SELECT status FROM partidas WHERE id = ?').get(partida.id_proxima_partida);
   if (proxima && proxima.status === 'finalizada') {
-    falha(400, 'A partida seguinte da chave ja foi jogada. Apague o resultado dela antes de mudar este.');
+    falha(400, 'A partida seguinte da chave já foi jogada. Apague o resultado dela antes de mudar este placar.');
   }
 }
 
 function registrarResultado(req, res) {
   const partida = partidaOuFalha(req.params.id);
 
-  if (partida.status === 'bye') falha(400, 'Esta partida e um bye: o time avancou sem jogar.');
+  if (partida.status === 'bye') falha(400, 'Esta partida é um bye: o time avançou sem jogar.');
   if (!partida.id_time_a || !partida.id_time_b) {
-    falha(400, 'Os times desta partida ainda nao foram definidos pela fase anterior.');
+    falha(400, 'Os times desta partida ainda não foram definidos pela fase anterior.');
   }
 
   const gols_a = inteiroNaoNegativo(req.body?.gols_a, 'Gols do mandante');
@@ -68,14 +68,14 @@ function registrarResultado(req, res) {
 
   if (eliminatoria && gols_a === gols_b) {
     if (req.body?.penaltis_a === undefined || req.body?.penaltis_b === undefined) {
-      falha(400, 'Empate em fase eliminatoria: informe a disputa de penaltis.');
+      falha(400, 'Empate em fase eliminatória: informe a disputa de pênaltis.');
     }
-    penaltis_a = inteiroNaoNegativo(req.body.penaltis_a, 'Penaltis do mandante');
-    penaltis_b = inteiroNaoNegativo(req.body.penaltis_b, 'Penaltis do visitante');
-    if (penaltis_a === penaltis_b) falha(400, 'A disputa de penaltis nao pode terminar empatada.');
+    penaltis_a = inteiroNaoNegativo(req.body.penaltis_a, 'Pênaltis do mandante');
+    penaltis_b = inteiroNaoNegativo(req.body.penaltis_b, 'Pênaltis do visitante');
+    if (penaltis_a === penaltis_b) falha(400, 'A disputa de pênaltis não pode terminar empatada.');
   }
 
-  // Gols por jogador (opcional, mas necessario para o ranking de artilheiros)
+  // Gols por jogador (opcional, mas necessário para o ranking de artilheiros)
   const lista = Array.isArray(req.body?.gols) ? req.body.gols : [];
   const elenco = db.prepare(
     'SELECT id, id_time FROM jogadores WHERE id_time IN (?, ?)'
@@ -89,15 +89,15 @@ function registrarResultado(req, res) {
   for (const item of lista) {
     const idJogador = Number(item?.id_jogador);
     const quantidade = Number(item?.quantidade ?? 1);
-    if (!time.has(idJogador)) falha(400, 'Um dos jogadores informados nao joga por nenhum dos dois times.');
+    if (!time.has(idJogador)) falha(400, 'Um dos jogadores informados não joga por nenhum dos dois times.');
     if (!Number.isInteger(quantidade) || quantidade < 1) falha(400, 'A quantidade de gols de cada jogador precisa ser 1 ou mais.');
     if (time.get(idJogador) === partida.id_time_a) somaA += quantidade;
     else somaB += quantidade;
     normalizados.push({ id_jogador: idJogador, quantidade });
   }
 
-  if (somaA > gols_a) falha(400, 'Os gols marcados pelos jogadores do mandante passam do placar informado.');
-  if (somaB > gols_b) falha(400, 'Os gols marcados pelos jogadores do visitante passam do placar informado.');
+  if (somaA > gols_a) falha(400, 'Os gols marcados pelos jogadores do mandante ultrapassam o placar informado.');
+  if (somaB > gols_b) falha(400, 'Os gols marcados pelos jogadores do visitante ultrapassam o placar informado.');
 
   if (eliminatoria) travarSeProximaJaJogada(partida);
 
@@ -129,14 +129,14 @@ function registrarResultado(req, res) {
 
   Historico.registrar({
     nome: req.admin.nome, acao: 'lancar_placar', entidade: 'partida', entidade_id: partida.id,
-    descricao: `lancou o placar de "${partida.time_a} ${gols_a} x ${gols_b} ${partida.time_b}"`
+    descricao: `lançou o placar de "${partida.time_a} ${gols_a} x ${gols_b} ${partida.time_b}"`
   });
   res.json({ ...Partida.porId(partida.id), gols: Partida.golsDaPartida(partida.id) });
 }
 
 function apagarResultado(req, res) {
   const partida = partidaOuFalha(req.params.id);
-  if (partida.status !== 'finalizada') falha(400, 'Esta partida ainda nao tem resultado lancado.');
+  if (partida.status !== 'finalizada') falha(400, 'Esta partida ainda não tem resultado lançado.');
   if (partida.fase !== 'grupos') travarSeProximaJaJogada(partida);
 
   db.transaction(() => {
@@ -147,7 +147,7 @@ function apagarResultado(req, res) {
       WHERE id = ?
     `).run(partida.id);
 
-    // limpa o time que tinha avancado por causa deste resultado
+    // limpa o time que tinha avançado por causa deste resultado
     if (partida.id_proxima_partida) {
       const coluna = partida.slot_proxima === 'a' ? 'id_time_a' : 'id_time_b';
       db.prepare(`UPDATE partidas SET ${coluna} = NULL WHERE id = ?`).run(partida.id_proxima_partida);
@@ -162,7 +162,7 @@ function apagarResultado(req, res) {
   res.json(Partida.porId(partida.id));
 }
 
-/** Marca o campeonato como finalizado quando nao sobra nenhuma partida em aberto. */
+/** Marca o campeonato como finalizado quando não sobra nenhuma partida em aberto. */
 function fecharCampeonatoSeAcabou(idCampeonato) {
   const abertas = db.prepare(`
     SELECT COUNT(*) AS n FROM partidas

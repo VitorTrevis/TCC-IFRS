@@ -1,10 +1,10 @@
-/* Camada de acesso a API + sessao (admin ou aluno). */
+/* Camada de acesso à API + sessão (admin ou aluno). */
 
 const API = '/api';
 const CHAVE_TOKEN = 'campeonatos:token';
 const CHAVE_PAPEL = 'campeonatos:papel';   // 'admin' | 'aluno'
-const CHAVE_ALUNO = 'campeonatos:aluno';   // so preenchido quando papel = 'aluno'
-const CHAVE_ADMIN_NOME = 'campeonatos:admin_nome'; // so preenchido quando papel = 'admin'
+const CHAVE_ALUNO = 'campeonatos:aluno';   // só preenchido quando papel = 'aluno'
+const CHAVE_ADMIN_NOME = 'campeonatos:admin_nome'; // só preenchido quando papel = 'admin'
 
 const Sessao = {
   get token() { return localStorage.getItem(CHAVE_TOKEN); },
@@ -64,7 +64,7 @@ async function pedir(metodo, caminho, corpo) {
 }
 
 const api = {
-  // Coordenacao (senha unica + nome de quem esta entrando, para o historico)
+  // Coordenação (senha única + nome de quem está entrando, para o histórico)
   loginAdmin: (senha, nome) => pedir('POST', '/admin/login', { senha, nome }),
   historico: () => pedir('GET', '/historico'),
 
@@ -76,7 +76,7 @@ const api = {
   esqueciSenha:         (email) => pedir('POST', '/alunos/esqueci-senha', { email }),
   redefinirSenha:       (token, senha, confirmar_senha) => pedir('POST', '/alunos/redefinir-senha', { token, senha, confirmar_senha }),
 
-  // Contas de aluno — pre-cadastro manual pela coordenacao (excecao)
+  // Contas de aluno — pré-cadastro manual pela coordenação (exceção)
   buscarAlunos:      (nome) => pedir('GET', `/alunos/buscar?nome=${encodeURIComponent(nome)}`),
   definirSenhaAluno: (id, senha, confirmar_senha) => pedir('POST', `/alunos/${id}/definir-senha`, { senha, confirmar_senha }),
   loginAluno:        (id, senha) => pedir('POST', '/alunos/login', { id, senha }),

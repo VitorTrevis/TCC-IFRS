@@ -23,8 +23,8 @@ function render(lista) {
 
   if (!lista.length) {
     el('lista-historico').innerHTML = `<div class="vazio">
-      <strong>Nenhuma alteracao registrada ainda</strong>
-      Assim que alguem criar, editar ou excluir algo, aparece aqui.</div>`;
+      <strong>Nenhuma alteração registrada ainda</strong>
+      Assim que alguém criar, editar ou excluir algo, aparece aqui.</div>`;
     return;
   }
 
@@ -47,7 +47,7 @@ async function carregar() {
     render(await api.historico());
   } catch (e) {
     if (e.status === 401) { location.href = 'login.html?voltar=historico.html'; return; }
-    el('lista-historico').innerHTML = `<div class="vazio"><strong>Nao deu para carregar</strong>${esc(e.message)}</div>`;
+    el('lista-historico').innerHTML = `<div class="vazio"><strong>Não deu para carregar</strong>${esc(e.message)}</div>`;
   }
 }
 

@@ -20,7 +20,7 @@ function cabecalho(dados) {
     <section class="capa">
       <div class="sobrancelha">Meu painel</div>
       <h1 class="mb-1">${esc(aluno?.nome || '')}<span class="ponto">.</span></h1>
-      <p class="mb-0">Seu desempenho nos campeonatos da escola, atualizado a cada placar lancado.</p>
+      <p class="mb-0">Seu desempenho nos campeonatos da escola, atualizado a cada placar lançado.</p>
       <div class="capa-numeros">
         ${numero(dados.totalGols, dados.totalGols === 1 ? 'gol no total' : 'gols no total')}
         ${numero(dados.totalPartidas, dados.totalPartidas === 1 ? 'partida' : 'partidas')}
@@ -33,8 +33,8 @@ function cabecalho(dados) {
 function estatisticas(dados) {
   if (!dados.totalPartidas) {
     return `<div class="vazio">
-      <strong>Voce ainda nao aparece em nenhuma partida</strong>
-      Assim que a coordenacao vincular voce a um time e lancar os placares,
+      <strong>Você ainda não aparece em nenhuma partida</strong>
+      Assim que a coordenação vincular você a um time e lançar os placares,
       seu desempenho aparece aqui.
     </div>`;
   }
@@ -45,7 +45,7 @@ function estatisticas(dados) {
       <div class="cartao-corpo">
         <div class="table-responsive">
           <table class="tabela-classificacao">
-            <thead><tr><th class="text-start">Campeonato</th><th>Partidas</th><th>Gols</th><th class="d-none d-sm-table-cell">Media</th></tr></thead>
+            <thead><tr><th class="text-start">Campeonato</th><th>Partidas</th><th>Gols</th><th class="d-none d-sm-table-cell">Média</th></tr></thead>
             <tbody>
               ${dados.porCampeonato.map((c) => `
                 <tr>
@@ -76,7 +76,7 @@ function estatisticas(dados) {
               ${esc(p.campeonato)}${p.rodada ? ` &middot; rodada ${p.rodada}` : ''}
               ${p.fase && p.fase !== 'grupos' ? ` &middot; ${esc(FASES[p.fase] || p.fase)}` : ''}
               ${p.meus_gols
-                ? ` &middot; <strong style="color:var(--quadra)">voce marcou ${p.meus_gols} ${p.meus_gols === 1 ? 'gol' : 'gols'}</strong>`
+                ? ` &middot; <strong style="color:var(--quadra)">você marcou ${p.meus_gols} ${p.meus_gols === 1 ? 'gol' : 'gols'}</strong>`
                 : ' &middot; sem gols seus nesta partida'}
             </div>
           </div>`).join('')}
@@ -119,6 +119,6 @@ function listaCampeonatos(campeonatos) {
     el('aba-campeonatos').innerHTML = listaCampeonatos(campeonatos);
   } catch (e) {
     if (e.status === 401) { location.href = 'login.html'; return; }
-    el('cabecalho').innerHTML = `<div class="vazio"><strong>Nao deu para carregar</strong>${esc(e.message)}</div>`;
+    el('cabecalho').innerHTML = `<div class="vazio"><strong>Não deu para carregar</strong>${esc(e.message)}</div>`;
   }
 })();

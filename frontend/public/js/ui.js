@@ -1,4 +1,4 @@
-/* Funcoes de apoio compartilhadas por todas as telas. */
+/* Funções de apoio compartilhadas por todas as telas. */
 
 const FORMATOS = {
   pontos_corridos: 'Pontos corridos',
@@ -57,11 +57,11 @@ function avisar(mensagem, tipo = 'info') {
 }
 
 /* =====================================================================
-   Substitutos de confirm()/prompt() nativos: viram uma caixa de dialogo
+   Substitutos de confirm()/prompt() nativos: viram uma caixa de diálogo
    feia (ou, em alguns embeds/iframes, nem funcionam — o navegador pode
-   bloquear ou suprimir os dois). Um modal proprio funciona em qualquer
-   lugar e segue o visual do resto do site. Cada funcao cria seu modal
-   uma unica vez (na primeira chamada) e reaproveita nas seguintes.
+   bloquear ou suprimir os dois). Um modal próprio funciona em qualquer
+   lugar e segue o visual do resto do site. Cada função cria seu modal
+   uma única vez (na primeira chamada) e reaproveita nas seguintes.
    ===================================================================== */
 
 let modalConfirmar;
@@ -149,14 +149,14 @@ function pedirTexto(mensagem, valorInicial = '', textoBotao = 'Salvar') {
   });
 }
 
-/** Monta a barra superior de acordo com o papel da sessao (admin, aluno ou visitante). */
+/** Monta a barra superior de acordo com o papel da sessão (admin, aluno ou visitante). */
 function montarTopo(ativo = '') {
   const alvo = document.getElementById('topo');
   if (!alvo) return;
 
   let areaConta = `<a class="btn btn-sm btn-outline-light" href="login.html">Entrar</a>`;
   if (Sessao.ehAdmin) {
-    areaConta = `<span class="text-white-50 small d-none d-lg-inline">${esc(Sessao.nomeAdmin || 'Coordenacao')}</span>
+    areaConta = `<span class="text-white-50 small d-none d-lg-inline">${esc(Sessao.nomeAdmin || 'Coordenação')}</span>
                  <button class="btn btn-sm btn-outline-light" id="btn-sair">Sair</button>`;
   } else if (Sessao.ehAluno) {
     const aluno = Sessao.aluno;
@@ -173,7 +173,7 @@ function montarTopo(ativo = '') {
     : '';
 
   const linkHistorico = Sessao.ehAdmin
-    ? `<li class="nav-item"><a class="nav-link ${ativo === 'historico' ? 'ativo' : ''}" href="historico.html">Historico</a></li>`
+    ? `<li class="nav-item"><a class="nav-link ${ativo === 'historico' ? 'ativo' : ''}" href="historico.html">Histórico</a></li>`
     : '';
 
   alvo.innerHTML = `
@@ -218,7 +218,7 @@ function linhaJogo(p, opcoes = {}) {
     const time = lado === 'a' ? p.time_a : p.time_b;
     const rotulo = lado === 'a' ? p.rotulo_a : p.rotulo_b;
     if (id) return { texto: time, definido: true };
-    return { texto: rotulo === 'BYE' ? 'Sem adversario' : (rotulo || 'A definir'), definido: false };
+    return { texto: rotulo === 'BYE' ? 'Sem adversário' : (rotulo || 'A definir'), definido: false };
   };
 
   const a = nome('a');
@@ -229,7 +229,7 @@ function linhaJogo(p, opcoes = {}) {
   let chip;
   if (finalizada) {
     const penaltis = (p.penaltis_a !== null && p.penaltis_a !== undefined)
-      ? `<span class="penaltis">penaltis ${p.penaltis_a} x ${p.penaltis_b}</span>` : '';
+      ? `<span class="penaltis">pênaltis ${p.penaltis_a} x ${p.penaltis_b}</span>` : '';
     chip = `<div class="chip-placar">${p.gols_a} : ${p.gols_b}${penaltis}</div>`;
   } else if (bye) {
     chip = `<div class="chip-placar aberto">PASSOU DIRETO</div>`;
@@ -261,8 +261,8 @@ function agruparPartidas(partidas) {
   return porFase;
 }
 
-/** Classe visual da posicao: quando o campeonato define quantos avancam, o
- *  destaque marca os classificados; sem isso, marca o podio (1o, 2o, 3o). */
+/** Classe visual da posição: quando o campeonato define quantos avançam, o
+ *  destaque marca os classificados; sem isso, marca o pódio (1º, 2º, 3º). */
 function classePosicao(posicao, classificados) {
   if (classificados) return posicao <= classificados ? 'classificado' : '';
   return posicao <= 3 ? `podio-${posicao}` : '';
@@ -306,7 +306,7 @@ function tabelaClassificacao(linhas, classificados = 0) {
 function tabelaArtilheiros(linhas) {
   if (!linhas.length) {
     return `<div class="vazio"><strong>Nenhum gol registrado</strong>
-      Os artilheiros aparecem assim que os placares forem lancados com os nomes dos marcadores.</div>`;
+      Os artilheiros aparecem assim que os placares forem lançados com os nomes dos marcadores.</div>`;
   }
   return `
     <div class="table-responsive">
@@ -325,7 +325,7 @@ function tabelaArtilheiros(linhas) {
     </div>`;
 }
 
-/** Bloco de carregamento com o simbolo da marca (circulo + quadrados). */
+/** Bloco de carregamento com o símbolo da marca (círculo + quadrados). */
 function carregador(texto = 'Carregando...') {
   return `<div class="text-center py-5">
     <div class="carregando" role="status" aria-label="${esc(texto)}">
@@ -335,7 +335,7 @@ function carregador(texto = 'Carregando...') {
   </div>`;
 }
 
-/** Desenha a chave eliminatoria em colunas por fase. */
+/** Desenha a chave eliminatória em colunas por fase. */
 function desenharChave(partidas) {
   const fases = ['32avos', '16avos', 'oitavas', 'quartas', 'semi', 'final'];
   const presentes = fases.filter((f) => partidas.some((p) => p.fase === f));
@@ -350,7 +350,7 @@ function desenharChave(partidas) {
     const pen = qual === 'a' ? p.penaltis_a : p.penaltis_b;
     const penOutro = qual === 'a' ? p.penaltis_b : p.penaltis_a;
     const venceu = p.status === 'finalizada' && (gols > outros || (gols === outros && pen > penOutro));
-    const texto = id ? nome : (rotulo === 'BYE' ? 'Sem adversario' : (rotulo || 'A definir'));
+    const texto = id ? nome : (rotulo === 'BYE' ? 'Sem adversário' : (rotulo || 'A definir'));
     return `<div class="chave-lado ${id ? '' : 'indefinido'} ${venceu ? 'vencedor' : ''}">
         <span>${esc(texto)}</span><b>${p.status === 'finalizada' ? gols : ''}</b>
       </div>`;
@@ -368,9 +368,9 @@ function desenharChave(partidas) {
 }
 
 /* =====================================================================
-   Micro-interacoes compartilhadas por todas as telas.
-   As paginas montam o HTML por JavaScript depois do fetch, entao um
-   MutationObserver percebe o conteudo novo e aplica revelacao e contadores
+   Micro-interações compartilhadas por todas as telas.
+   As páginas montam o HTML por JavaScript depois do fetch, então um
+   MutationObserver percebe o conteúdo novo e aplica revelação e contadores
    sozinho — nenhuma tela precisa chamar nada.
    ===================================================================== */
 
@@ -392,9 +392,9 @@ function prepararRevelacao(raiz = document) {
   if (!observadorRevelar) return;
   for (const alvo of raiz.querySelectorAll(ALVOS_REVELAR)) {
     if (alvo.dataset.revelar) continue;
-    // Quem esta dentro de um container escondido (aba fechada, passo do login
-    // ainda nao aberto) nunca dispara o observador — ficaria invisivel para
-    // sempre. Esses aparecem normalmente, so sem a animacao de entrada.
+    // Quem está dentro de um container escondido (aba fechada, passo do login
+    // ainda não aberto) nunca dispara o observador — ficaria invisível para
+    // sempre. Esses aparecem normalmente, só sem a animação de entrada.
     if (!alvo.getClientRects().length) continue;
     alvo.dataset.revelar = '1';
     alvo.classList.add('revelar');
@@ -402,7 +402,7 @@ function prepararRevelacao(raiz = document) {
   }
 }
 
-/** Numeros que sobem de 0 ate o valor final (`data-contar="12"`). */
+/** Números que sobem de 0 até o valor final (`data-contar="12"`). */
 function animarContadores(raiz = document) {
   for (const alvo of raiz.querySelectorAll('[data-contar]')) {
     if (alvo.dataset.contado) continue;
@@ -424,7 +424,7 @@ function animarContadores(raiz = document) {
   }
 }
 
-/** Ondulacao a partir do ponto clicado, como retorno tatil do botao. */
+/** Ondulação a partir do ponto clicado, como retorno tátil do botão. */
 document.addEventListener('click', (evento) => {
   if (SEM_MOVIMENTO) return;
   const botao = evento.target.closest('.btn:not(.btn-link)');
@@ -441,8 +441,8 @@ document.addEventListener('click', (evento) => {
   setTimeout(() => onda.remove(), 600);
 });
 
-/** Abas do Bootstrap comecam escondidas (display:none). Ao abrir, libera o
- *  que ja tiver sido marcado antes de esconder e dispara os contadores. */
+/** Abas do Bootstrap começam escondidas (display:none). Ao abrir, libera o
+ *  que já tiver sido marcado antes de esconder e dispara os contadores. */
 document.addEventListener('shown.bs.tab', (evento) => {
   const painel = document.querySelector(evento.target.dataset.bsTarget || '');
   if (!painel) return;
@@ -454,9 +454,9 @@ document.addEventListener('shown.bs.modal', (evento) => {
   for (const alvo of evento.target.querySelectorAll('.revelar:not(.visivel)')) alvo.classList.add('visivel');
 });
 
-/* Os contadores trocam textContent a cada quadro, o que por si so ja e uma
-   mutacao — sem juntar as chamadas, o observador varreria a pagina 60x por
-   segundo enquanto os numeros sobem. */
+/* Os contadores trocam textContent a cada quadro, o que por si só já é uma
+   mutação — sem juntar as chamadas, o observador varreria a página 60x por
+   segundo enquanto os números sobem. */
 let varreduraAgendada = false;
 new MutationObserver(() => {
   if (varreduraAgendada) return;

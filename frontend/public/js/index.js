@@ -24,7 +24,7 @@ function cartao(c) {
           ${c.total_times} ${c.total_times === 1 ? 'time' : 'times'} &middot;
           ${c.total_partidas} ${c.total_partidas === 1 ? 'jogo' : 'jogos'}
         </div>
-        ${c.data_inicio ? `<div class="text-muted small mt-1">Comeca em ${esc(dataBR(c.data_inicio))}</div>` : ''}
+        ${c.data_inicio ? `<div class="text-muted small mt-1">Começa em ${esc(dataBR(c.data_inicio))}</div>` : ''}
         <div class="d-flex gap-2">
           <a class="btn btn-sm btn-primary mt-3" href="campeonato.html?id=${c.id}">Acompanhar</a>
           ${gerenciar}
@@ -33,7 +33,7 @@ function cartao(c) {
     </div>`;
 }
 
-/** Numeros de resumo na capa, somados a partir da propria lista. */
+/** Números de resumo na capa, somados a partir da própria lista. */
 function numerosDaCapa(campeonatos) {
   const soma = (campo) => campeonatos.reduce((total, c) => total + (c[campo] || 0), 0);
   const emAndamento = campeonatos.filter((c) => c.status === 'em_andamento').length;
@@ -62,7 +62,7 @@ async function carregar() {
            Crie o primeiro para cadastrar os times e gerar a tabela de jogos.
          </div></div>`;
   } catch (e) {
-    lista.innerHTML = `<div class="col-12"><div class="vazio"><strong>Nao deu para carregar</strong>${esc(e.message)}</div></div>`;
+    lista.innerHTML = `<div class="col-12"><div class="vazio"><strong>Não deu para carregar</strong>${esc(e.message)}</div></div>`;
   }
 }
 

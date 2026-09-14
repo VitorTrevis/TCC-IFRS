@@ -1,11 +1,11 @@
-/** Lanca um erro HTTP com status e mensagem clara. */
+/** Lança um erro HTTP com status e mensagem clara. */
 function falha(status, mensagem) {
   const erro = new Error(mensagem);
   erro.status = status;
   throw erro;
 }
 
-/** Envolve controllers async para nao precisar de try/catch em cada rota. */
+/** Envolve controllers async para não precisar de try/catch em cada rota. */
 function rota(fn) {
   return (req, res, next) => {
     try {
@@ -18,7 +18,7 @@ function rota(fn) {
 }
 
 function naoEncontrado(req, res) {
-  res.status(404).json({ erro: `Rota nao encontrada: ${req.method} ${req.originalUrl}` });
+  res.status(404).json({ erro: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
 }
 
 // eslint-disable-next-line no-unused-vars

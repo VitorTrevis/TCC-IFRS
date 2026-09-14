@@ -17,18 +17,18 @@ function validar(corpo, parcialDe = null) {
   const formato = (b.formato ?? atual.formato ?? '').toString().trim();
 
   if (!nome) falha(400, 'Informe o nome do campeonato.');
-  if (!modalidade) falha(400, 'Informe a modalidade (Futsal, Volei, Handebol...).');
+  if (!modalidade) falha(400, 'Informe a modalidade (Futsal, Vôlei, Handebol...).');
   if (!FORMATOS.includes(formato)) {
-    falha(400, `Formato invalido. Use um destes: ${FORMATOS.join(', ')}.`);
+    falha(400, `Formato inválido. Use um destes: ${FORMATOS.join(', ')}.`);
   }
 
   const status = (b.status ?? atual.status ?? 'planejado').toString();
-  if (!STATUS.includes(status)) falha(400, `Status invalido. Use: ${STATUS.join(', ')}.`);
+  if (!STATUS.includes(status)) falha(400, `Status inválido. Use: ${STATUS.join(', ')}.`);
 
   const inteiro = (v, padrao) => {
     if (v === undefined || v === null || v === '') return padrao;
     const n = Number(v);
-    if (!Number.isInteger(n)) falha(400, 'Valores numericos precisam ser numeros inteiros.');
+    if (!Number.isInteger(n)) falha(400, 'Valores numéricos precisam ser números inteiros.');
     return n;
   };
 
@@ -57,7 +57,7 @@ function validar(corpo, parcialDe = null) {
 
 function buscarOuFalhar(id) {
   const c = Campeonato.porId(id);
-  if (!c) falha(404, 'Campeonato nao encontrado.');
+  if (!c) falha(404, 'Campeonato não encontrado.');
   return c;
 }
 
@@ -82,7 +82,7 @@ function atualizar(req, res) {
   if (dados.formato !== atual.formato) {
     const jogos = Partida.listarPorCampeonato(atual.id).length;
     if (jogos > 0) {
-      falha(400, 'A tabela de jogos ja existe. Gere a tabela de novo depois de trocar o formato.');
+      falha(400, 'A tabela de jogos já existe. Gere a tabela de novo depois de trocar o formato.');
     }
   }
   Campeonato.atualizar(atual.id, dados);
