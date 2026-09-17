@@ -26,5 +26,6 @@ router.get('/eu/estatisticas', exigirAluno, rota(c.minhasEstatisticas));
 // Exclusivo da coordenação
 router.get('/', exigirAdmin, rota(c.listar));
 router.post('/:id/resetar-senha', exigirAdmin, rota(c.resetarSenha));
+router.delete('/:id', exigirAdmin, rota(c.excluir));
 
 module.exports = router;

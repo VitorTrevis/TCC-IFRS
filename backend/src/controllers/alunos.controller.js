@@ -189,9 +189,25 @@ async function resetarSenha(req, res) {
   });
 }
 
+/** Apaga a conta do aluno por completo — para quando resetar a senha não
+ *  resolve (ex: token de confirmação/redefinição travado de algum jeito).
+ *  Ele precisa criar a conta de novo do zero pelo autocadastro. Os nomes no
+ *  elenco dos times e os gols já marcados continuam existindo, só perdem o
+ *  vínculo com essa conta (ON DELETE SET NULL em jogadores.id_aluno). */
+async function excluir(req, res) {
+  const aluno = await Aluno.porId(req.params.id);
+  if (!aluno) falha(404, 'Aluno não encontrado.');
+  await Aluno.remover(aluno.id);
+  await Historico.registrar({
+    nome: req.admin.nome, acao: 'remover', entidade: 'aluno', entidade_id: aluno.id,
+    descricao: `excluiu o cadastro de "${aluno.nome}" (${aluno.email})`
+  });
+  res.status(204).end();
+}
+
 module.exports = {
   cadastrarPorEmail, confirmarEmail, reenviarConfirmacao,
   esqueciSenha, redefinirSenha,
   entrar, minhasEstatisticas,
-  listar, resetarSenha
+  listar, resetarSenha, excluir
 };

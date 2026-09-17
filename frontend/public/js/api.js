@@ -79,6 +79,7 @@ const api = {
   minhasEstatisticas:() => pedir('GET', '/alunos/eu/estatisticas'),
   listarAlunosAdmin: () => pedir('GET', '/alunos'),
   resetarSenhaAluno: (id) => pedir('POST', `/alunos/${id}/resetar-senha`),
+  excluirAluno:      (id) => pedir('DELETE', `/alunos/${id}`),
 
   campeonatos:      () => pedir('GET', '/campeonatos'),
   campeonato:       (id) => pedir('GET', `/campeonatos/${id}`),

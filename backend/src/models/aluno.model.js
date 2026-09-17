@@ -12,6 +12,12 @@ const listar = () => db.prepare(`
 const resetarSenha = (id) =>
   db.prepare('UPDATE alunos SET senha_hash = NULL WHERE id = ?').run(id);
 
+/** Apaga a conta por completo — usado quando resetar a senha não resolve
+ *  (ex: token de confirmação/redefinição travado). O vínculo em `jogadores`
+ *  fica com id_aluno = NULL (ON DELETE SET NULL): o nome no elenco e os
+ *  gols já marcados continuam existindo, só perde o vínculo com a conta. */
+const remover = (id) => db.prepare('DELETE FROM alunos WHERE id = ?').run(id);
+
 // ------------------------------------------------ autocadastro por e-mail
 
 /** Busca por e-mail (normalizado em caixa baixa — e-mail não tem acento a tratar). */
@@ -125,7 +131,7 @@ async function estatisticas(idAluno) {
 }
 
 module.exports = {
-  porId, listar, resetarSenha, estatisticas,
+  porId, listar, resetarSenha, remover, estatisticas,
   porEmail, existeEmail, criarComEmail, atualizarTokenVerificacao,
   porTokenValido, marcarEmailVerificado,
   definirTokenReset, porTokenResetValido, redefinirSenhaComToken

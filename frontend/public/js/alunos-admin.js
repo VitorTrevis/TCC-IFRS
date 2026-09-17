@@ -38,6 +38,7 @@ function render(alunos) {
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
           ${situacao(a)}
           ${a.tem_senha ? `<button class="btn btn-sm btn-outline-secondary" data-resetar="${a.id}">${icone('chave')}Resetar senha</button>` : ''}
+          <button class="btn btn-sm btn-outline-danger" data-excluir="${a.id}" aria-label="Excluir cadastro de ${esc(a.nome)}" title="Excluir cadastro">${icone('lixeira')}</button>
         </div>
       </div>`).join('')}
   </div>`;
@@ -49,6 +50,21 @@ function render(alunos) {
       try {
         const r = await api.resetarSenhaAluno(aluno.id);
         avisar(r.mensagem, 'sucesso');
+        await carregar();
+      } catch (e) { avisar(e.message, 'erro'); }
+    };
+  });
+
+  el('lista-alunos').querySelectorAll('[data-excluir]').forEach((b) => {
+    b.onclick = async () => {
+      const aluno = alunos.find((a) => a.id === Number(b.dataset.excluir));
+      const mensagem = `Excluir o cadastro de "${aluno.nome}" (${aluno.email})? Use isso quando resetar a senha não resolver, `
+        + `como um link de confirmação travado. Ele precisa criar a conta de novo do zero pelo autocadastro. `
+        + `O nome dele no elenco dos times e os gols já marcados continuam existindo, só perdem o vínculo com essa conta.`;
+      if (!(await confirmarAcao(mensagem, 'Excluir cadastro'))) return;
+      try {
+        await api.excluirAluno(aluno.id);
+        avisar(`Cadastro de ${aluno.nome} excluído.`, 'sucesso');
         await carregar();
       } catch (e) { avisar(e.message, 'erro'); }
     };
