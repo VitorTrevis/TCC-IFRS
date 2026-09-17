@@ -97,19 +97,17 @@ do front-end na mesma porta — não precisa abrir os arquivos HTML direto do di
 ## Deploy na Vercel (para apresentar com um link)
 
 Isso publica o sistema num link público, sem precisar rodar nada no terminal
-depois de configurado uma vez. **Importante entender antes de usar em
-apresentação:** a Vercel roda o backend como função serverless, que não tem
-disco permanente. Para contornar isso sem reescrever o banco de dados, o
-projeto guarda uma "foto" pré-populada em `backend/db-inicial/campeonatos.db`,
-e ela é copiada para a pasta temporária da função a cada "cold start".
-
-Na prática, para uma apresentação isso funciona bem: você abre o link, navega,
-loga como admin, lança um placar — tudo funciona normalmente enquanto a mesma
-instância da função continuar ativa (o caso comum durante uma demo contínua).
-O que **não** é garantido é a durabilidade: se a Vercel reciclar a instância
-(em picos de tráfego, ou depois de um tempo ocioso), a próxima requisição volta
-a partir da foto original, sem os dados que você alterou. Para uso real no
-dia a dia da escola, veja "Banco externo" mais abaixo.
+depois de configurado uma vez. A Vercel roda o backend como função
+serverless, que não tem disco permanente — por isso a persistência de verdade
+vem de um banco [Turso](https://turso.tech) (SQLite hospedado, plano grátis),
+falado através do cliente `@libsql/client`. Localmente o mesmo cliente aponta
+para um arquivo comum (`backend/campeonatos.db`), sem precisar de conta
+nenhuma — só a produção (Vercel) precisa das variáveis `TURSO_DATABASE_URL` e
+`TURSO_AUTH_TOKEN`. Sem elas, a produção volta a usar um arquivo local dentro
+da função, que se perde a cada "cold start" — se o cadastro de aluno ou a
+redefinição de senha começarem a dizer "link expirado ou já foi usado" na
+primeira tentativa, é sinal de que essas duas variáveis não estão configuradas
+no projeto da Vercel.
 
 ### Passo a passo (sem terminal, tudo pelo navegador)
 
@@ -121,7 +119,10 @@ dia a dia da escola, veja "Banco externo" mais abaixo.
 3. **"Add New" → "Project"** e selecione o repositório que você acabou de subir.
 4. A Vercel detecta o `vercel.json` na raiz automaticamente. Não precisa mudar
    nenhuma configuração de build.
-5. Antes de clicar em Deploy, abra **"Environment Variables"** e adicione:
+5. Antes de clicar em Deploy, crie um banco grátis em [turso.tech](https://turso.tech)
+   (login com GitHub) e copie a **Database URL** e um **Auth Token** (botão
+   "Create Token" na página do banco). Depois abra **"Environment Variables"**
+   e adicione:
 
    | Nome | Valor |
    |---|---|
@@ -131,12 +132,17 @@ dia a dia da escola, veja "Banco externo" mais abaixo.
    | `GMAIL_APP_PASSWORD` | a senha de app gerada (não é a senha normal da conta — veja a seção 3 acima) |
    | `APP_URL` | o link que a Vercel vai gerar, ex: `https://tcc-ifrs.vercel.app` |
    | `DOMINIO_EMAIL_ALUNO` | `aluno.farroupilha.ifrs.edu.br` (ou deixe de fora — esse já é o padrão) |
+   | `TURSO_DATABASE_URL` | a Database URL copiada do Turso (começa com `libsql://`) |
+   | `TURSO_AUTH_TOKEN` | o Auth Token gerado no Turso |
 
    Sem `GMAIL_USER`/`GMAIL_APP_PASSWORD` configurados, o cadastro de aluno
    continua funcionando, mas o link de confirmação só vai parar nos **logs da
    Vercel** (aba "Logs" do deployment) em vez do e-mail do aluno — inviável
    para uso real, mas não quebra a demonstração se você mesmo simular um cadastro
-   e pegar o link direto do log.
+   e pegar o link direto do log. Sem `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`,
+   o site funciona normalmente numa sessão contínua, mas qualquer coisa criada
+   (campeonato, cadastro de aluno, token de confirmação) pode se perder entre
+   uma visita e outra.
 
 6. Clique em **Deploy**. Em cerca de um minuto você recebe um link
    `https://seu-projeto.vercel.app` pronto para abrir na apresentação.
@@ -145,31 +151,18 @@ dia a dia da escola, veja "Banco externo" mais abaixo.
    sabe o link definitivo depois do primeiro deploy). Se precisar corrigir, muda
    o valor e clica em "Redeploy".
 
-### Atualizando os dados de demonstração
+### Repopulando os dados de demonstração no Turso
 
-O banco publicado é a "foto" gerada localmente, não o banco que você usa no dia
-a dia (`backend/campeonatos.db`, que é só sua, local). Para atualizar o que
-aparece no link publicado:
+O banco do Turso é independente do arquivo local (`backend/campeonatos.db`).
+Para apagar tudo e recriar os campeonatos de exemplo direto no banco publicado:
 
 ```bash
 cd backend
-npm run gerar-banco-vercel
+TURSO_DATABASE_URL="sua-url" TURSO_AUTH_TOKEN="seu-token" npm run seed
 ```
 
-Isso regenera `backend/db-inicial/campeonatos.db`. Suba esse arquivo atualizado
-para o GitHub (pelo navegador ou por `git push`) e a Vercel publica a versão
-nova automaticamente.
-
-### Banco externo (para uso real, não só demonstração)
-
-Se depois quiser que a escola use isso de verdade — vários professores lançando
-placares ao longo do ano, com garantia de que nada se perde — o SQLite local
-não é a arquitetura certa para serverless. As opções são: trocar por um banco
-externo compatível (ex: [Turso](https://turso.tech), que fala o mesmo SQL do
-SQLite e tem plano grátis) ou hospedar em uma plataforma com disco persistente,
-como Render. Qualquer uma das duas exige adaptar a camada de acesso ao banco
-(`backend/src/db` e os models) para chamadas assíncronas — peça se quiser que
-eu faça essa migração.
+Isso mexe direto no banco de produção (apaga e recria todas as tabelas) — não
+precisa de novo deploy, o efeito é imediato no link publicado.
 
 ## Como usar
 
@@ -285,17 +278,13 @@ Cliente-servidor em três camadas:
 ```
 Apresentação    HTML + CSS + JavaScript puro + Bootstrap 5, consumindo a API via fetch()
 Lógica          Express organizado em rotas -> controllers -> services
-Persistência    SQLite via better-sqlite3, com schema relacional e chaves estrangeiras
+Persistência    SQLite via @libsql/client — arquivo local no dev, banco Turso em produção
 ```
 
 ```
 /backend
   /api
     index.js         ponto de entrada da funcao serverless (Vercel)
-  /db-inicial
-    campeonatos.db   banco pre-populado versionado, usado só no deploy da Vercel
-  /scripts
-    gerar-banco-vercel.js
   /src
     /controllers    admin, alunos, campeonatos, times, jogadores, partidas, publico, historico
     /models         acesso ao banco (consultas SQL isoladas)
@@ -579,12 +568,16 @@ ou feche o outro processo.
 
 **A página abre sem estilo** — falta internet para carregar o Bootstrap pelo CDN.
 
-**`better-sqlite3` falhou ao instalar** — ele compila código nativo. No Windows,
-instale as *Build Tools for Visual Studio*; no Linux, `sudo apt install build-essential`.
-
 **O e-mail de confirmação não chega** — confira se `GMAIL_USER` e `GMAIL_APP_PASSWORD`
 estão preenchidos no `.env` (ou nas variáveis da Vercel). Sem eles, o link só aparece
 no console/logs do servidor, não é enviado de verdade. Confira também a caixa de spam.
+
+**"Esse link expirou ou já foi usado" na primeira tentativa** (cadastro ou
+redefinição de senha), só em produção — confira se `TURSO_DATABASE_URL` e
+`TURSO_AUTH_TOKEN` estão configurados nas variáveis de ambiente da Vercel. Sem
+eles, a produção usa um arquivo local que não sobrevive entre uma requisição e
+outra, então o token gerado ao pedir o link já não existe mais quando o link é
+clicado.
 
 **`Invalid login` ou erro de autenticação do Gmail** — geralmente é a senha normal da
 conta em vez da senha de app. Gere uma nova em
