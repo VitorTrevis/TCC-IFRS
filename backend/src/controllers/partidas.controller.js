@@ -3,7 +3,7 @@ const Partida = require('../models/partida.model');
 const Campeonato = require('../models/campeonato.model');
 const Historico = require('../models/historico.model');
 const { falha } = require('../middlewares/erros');
-const { promoverVencedor, preencherMataMataComClassificados } = require('../services/tabela.service');
+const { promoverVencedor, preencherMataMataComClassificados, chaveTemResultado } = require('../services/tabela.service');
 
 function partidaOuFalha(id) {
   const p = Partida.porId(id);
@@ -48,6 +48,16 @@ function travarSeProximaJaJogada(partida) {
   const proxima = db.prepare('SELECT status FROM partidas WHERE id = ?').get(partida.id_proxima_partida);
   if (proxima && proxima.status === 'finalizada') {
     falha(400, 'A partida seguinte da chave já foi jogada. Apague o resultado dela antes de mudar este placar.');
+  }
+}
+
+/** Impede corrigir/apagar um placar da fase de grupos depois que a chave
+ *  eliminatória (montada a partir da classificação) já tem jogo decidido —
+ *  mudar quem classificou agora invalidaria um resultado que já aconteceu. */
+function travarSeChaveJaComecou(partida) {
+  if (partida.fase !== 'grupos') return;
+  if (chaveTemResultado(partida.id_campeonato)) {
+    falha(400, 'A chave eliminatória já tem jogo decidido com base na classificação atual dos grupos. Apague o(s) resultado(s) da chave antes de corrigir um placar da fase de grupos.');
   }
 }
 
@@ -100,6 +110,7 @@ function registrarResultado(req, res) {
   if (somaB > gols_b) falha(400, 'Os gols marcados pelos jogadores do visitante ultrapassam o placar informado.');
 
   if (eliminatoria) travarSeProximaJaJogada(partida);
+  else travarSeChaveJaComecou(partida);
 
   db.transaction(() => {
     db.prepare('DELETE FROM gols WHERE id_partida = ?').run(partida.id);
@@ -138,6 +149,7 @@ function apagarResultado(req, res) {
   const partida = partidaOuFalha(req.params.id);
   if (partida.status !== 'finalizada') falha(400, 'Esta partida ainda não tem resultado lançado.');
   if (partida.fase !== 'grupos') travarSeProximaJaJogada(partida);
+  else travarSeChaveJaComecou(partida);
 
   db.transaction(() => {
     db.prepare('DELETE FROM gols WHERE id_partida = ?').run(partida.id);
@@ -154,6 +166,11 @@ function apagarResultado(req, res) {
     }
     db.prepare("UPDATE campeonatos SET status = 'em_andamento' WHERE id = ?").run(partida.id_campeonato);
   })();
+
+  // a fase de grupos deixou de estar 100% completa: a chave eliminatória
+  // (se já tinha sido montada a partir da classificação) volta a ficar em
+  // branco até os grupos terminarem de novo.
+  if (partida.fase === 'grupos') preencherMataMataComClassificados(partida.id_campeonato);
 
   Historico.registrar({
     nome: req.admin.nome, acao: 'apagar_placar', entidade: 'partida', entidade_id: partida.id,

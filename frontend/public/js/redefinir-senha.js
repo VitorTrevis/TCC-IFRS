@@ -31,5 +31,6 @@ async function redefinir() {
   }
 }
 
-document.getElementById('btn-redefinir').onclick = redefinir;
-document.getElementById('confirmar-nova-senha').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') redefinir(); });
+const redefinirComGiro = () => comCarregamento(document.getElementById('btn-redefinir'), redefinir);
+document.getElementById('btn-redefinir').onclick = redefinirComGiro;
+document.getElementById('confirmar-nova-senha').addEventListener('keydown', (ev) => { if (ev.key === 'Enter') redefinirComGiro(); });

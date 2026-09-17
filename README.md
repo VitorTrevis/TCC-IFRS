@@ -64,15 +64,14 @@ npm run seed
 ```
 
 Isso cria dois campeonatos prontos, 11 times, 60 jogadores e vários placares já lançados,
-além de dois alunos de demonstração — um em cada fluxo de acesso possível. No fim ele
-mostra os acessos:
+além de dois alunos de demonstração com conta já verificada. No fim ele mostra os acessos:
 
 ```
 Senha da coordenação (admin): ifrs2026
 
 Alunos de demonstração:
   Vitor Trevisan  — login: vitor.trevisan@aluno.farroupilha.ifrs.edu.br / senha: vitor123
-  Ramiro Severgnini — pré-cadastro manual (exceção), sem senha ainda
+  Ramiro Severgnini — login: ramiro.severgnini@aluno.farroupilha.ifrs.edu.br / senha: ramiro123
 ```
 
 ### 5. Subir o servidor
@@ -194,21 +193,21 @@ O sistema tem **três níveis de acesso**:
 3. **Cadastrar os times** no painel, e os jogadores de cada time em "Elenco".
    Ao adicionar um jogador, vincule-o a um aluno já cadastrado pelo campo de
    autocomplete — é esse vínculo que faz as estatísticas aparecerem no painel dele.
-   Se o aluno ainda não tem conta, dá pra criar o vínculo digitando o nome dele
-   ali mesmo (vira um pré-cadastro sem e-mail, que ele completa depois).
+   O vínculo é opcional e só funciona com um aluno que já criou a própria conta
+   (veja "Aluno — autocadastro por e-mail institucional" abaixo).
 4. **Gerar tabela de jogos** — o sistema monta as rodadas ou a chave sozinho.
 5. **Lançar placar** em cada jogo. A classificação se atualiza na hora.
 6. **Compartilhar a página pública** (`campeonato.html?id=N`) com as turmas.
-7. **Acompanhar os alunos** no menu "Alunos" — quem já confirmou o e-mail, quem
-   está pendente, e o pré-cadastro manual de exceção (veja abaixo).
+7. **Acompanhar os alunos** no menu "Alunos" — quem já confirmou o e-mail e quem
+   está pendente.
 8. **Conferir o histórico** no menu "Histórico" — lista, mais recente primeiro,
    quem criou, editou ou excluiu cada campeonato, time, jogador e placar.
 
-### Aluno — caminho normal (autocadastro por e-mail institucional)
+### Aluno — autocadastro por e-mail institucional
 
-Esse é o fluxo pensado para ser usado sem a coordenação precisar cadastrar
-ninguém, um por um — veja a justificativa completa na seção
-"Autocadastro por e-mail" em Decisões de projeto.
+Esse é o único caminho de acesso do aluno: ele mesmo cria a conta, sem a
+coordenação precisar cadastrar ninguém um por um — veja a justificativa
+completa na seção "Autocadastro por e-mail" em Decisões de projeto.
 
 1. **Entrar** → "Sou aluno" → "Criar conta".
 2. Preenche nome completo, o e-mail institucional (precisa terminar em
@@ -230,19 +229,9 @@ institucional e manda um link de redefinição, válido por 1h e de uso único
 redefinição" em Decisões de projeto). Clicar no link leva a uma tela para
 escolher a nova senha, e já loga o aluno direto no painel.
 
-### Aluno — pré-cadastro manual (exceção, sem e-mail institucional)
-
-Para os casos em que a coordenação já sabe quem é o aluno mas ele não tem (ou
-não quer usar) o e-mail institucional na hora. Na tela de login, o aluno clica
-em "Fui cadastrado pela coordenação", busca o próprio nome, e define a senha no
-primeiro acesso — sem passar por confirmação de e-mail (a coordenação já
-garantiu a identidade dessa pessoa ao cadastrar o nome). A própria coordenação
-cria esse pré-cadastro em "Alunos" → "Pré-cadastro manual".
-
-Se o aluno esquecer a senha (de qualquer um dos dois caminhos), a coordenação
-reseta em "Alunos" → "Resetar senha". Depois do reset, ele define uma senha
-nova pelo mesmo "Fui cadastrado pela coordenação" — busca o próprio nome de
-novo, mesmo que a conta original tenha sido criada por e-mail.
+Se o aluno esquecer a senha, a coordenação reseta em "Alunos" → "Resetar
+senha". Depois do reset, ele define uma senha nova pelo próprio "Esqueci minha
+senha" na tela de login, usando o e-mail institucional de novo.
 
 ---
 
@@ -331,7 +320,7 @@ Persistência    SQLite via better-sqlite3, com schema relacional e chaves estra
     redefinir-senha.html  define nova senha a partir do link de "esqueci minha senha"
     painel-aluno.html     painel do aluno com estatísticas pessoais
     admin-campeonato.html painel do organizador
-    alunos-admin.html     lista de alunos e pré-cadastro manual (exceção)
+    alunos-admin.html     lista de alunos e reset de senha
     historico.html        quem criou/editou/excluiu o quê (só coordenação)
     campeonato.html       página pública (jogos, classificação, artilheiros)
     classificacao.html    só a classificação
@@ -356,13 +345,10 @@ Tudo em `/api`. Erros voltam sempre como `{ "erro": "mensagem clara" }`.
 | POST | `/api/alunos/reenviar-confirmacao` | Corpo `{ email }`. Sempre responde a mesma mensagem, exista ou não a conta |
 | POST | `/api/alunos/esqueci-senha` | Corpo `{ email }`. Manda link de redefinição (1h, uso único). Mesma mensagem sempre, exista ou não a conta |
 | POST | `/api/alunos/redefinir-senha` | Corpo `{ token, senha, confirmar_senha }`. Define a nova senha e já devolve o login (token + dados do aluno) |
-| GET | `/api/alunos/buscar?nome=` | Busca pública de pré-cadastros manuais (nunca devolve senha) |
-| POST | `/api/alunos/:id/definir-senha` | Primeiro acesso do pré-cadastro manual. Uso único por aluno |
-| POST | `/api/alunos/login` | Corpo `{ email, senha }` (autocadastro) ou `{ id/nome, senha }` (pré-cadastro manual) |
+| POST | `/api/alunos/login` | Corpo `{ email, senha }` |
 | GET | `/api/alunos/eu/estatisticas` | Estatísticas do aluno logado (token de aluno) |
 | GET | `/api/alunos` | Lista todos os alunos, com e-mail e status de verificação (admin) |
-| POST | `/api/alunos` | Pré-cadastro manual — exceção sem e-mail (admin) |
-| POST | `/api/alunos/:id/resetar-senha` | Zera a senha; aluno define uma nova em "Fui cadastrado pela coordenação" (admin) |
+| POST | `/api/alunos/:id/resetar-senha` | Zera a senha; aluno define uma nova em "Esqueci minha senha" (admin) |
 
 O login do admin tem limite de 8 tentativas por minuto por IP. O cadastro de
 aluno tem limite de 5/min, e o reenvio de confirmação e o pedido de
@@ -457,9 +443,8 @@ Pontos que fogem do óbvio:
 - **`jogadores.id_aluno` liga o jogador à conta do aluno**, e não o contrário. Um mesmo
   aluno joga por times diferentes em campeonatos diferentes ao longo do ano; as
   estatísticas pessoais dele somam todos esses vínculos.
-- **`alunos.email` é opcional e único.** É `NULL` para contas do pré-cadastro manual
-  (exceção) e preenchido para o autocadastro. O SQLite trata múltiplos `NULL` como
-  valores distintos, então vários pré-cadastros sem e-mail convivem sem conflito.
+- **`alunos.email` é único** — toda conta nasce pelo autocadastro por e-mail
+  institucional, então o campo é sempre preenchido.
 - **`alunos.token_verificacao` nunca guarda o token em si, só o hash dele** (SHA-256).
   Mesmo com acesso de leitura ao banco, não dá para forjar um link de confirmação
   válido — o mesmo princípio usado para `senha_hash`. `token_reset_senha` (par de
@@ -503,10 +488,14 @@ cadastrando cada aluno, e continua funcionando sozinho mesmo que ninguém mais d
 manutenção no código: é a própria escola (dona do domínio de e-mail) que segura
 a barreira, não uma lista que alguém precisa manter atualizada.
 
-O pré-cadastro manual pela coordenação continua existindo, mas como **exceção**
-— para o caso raro de alguém sem esse e-mail à mão. Ele não passa pela verificação
-por e-mail porque a garantia de identidade nesse caso vem de outro lugar: uma pessoa
-da coordenação que reconhece o aluno.
+Uma primeira versão desse recurso também tinha um pré-cadastro manual pela
+coordenação, como exceção para quem não tivesse o e-mail à mão — mas como a
+identificação dependia só do nome/id do aluno (sem confirmação por e-mail),
+qualquer pessoa que soubesse ou adivinhasse esse id conseguia reivindicar a
+conta de outra pessoa e ver as estatísticas dela. Como o e-mail institucional
+já é a barreira que garante identidade em todo o resto do sistema, o
+pré-cadastro manual foi removido: hoje **toda** conta de aluno passa pela
+confirmação de e-mail, sem exceção.
 
 **Token de confirmação é aleatório, expira em 24h, e só é armazenado como hash.**
 O token que vai no link do e-mail (`crypto.randomBytes(32)`) nunca é gravado em texto
@@ -548,6 +537,13 @@ avançar na chave, e a partida seguinte ficaria travada para sempre.
 o resultado anterior é recusado — senão o time errado ficaria na fase seguinte. Apague
 o resultado de trás para frente.
 
+Em campeonatos `grupos_mata_mata`, a mesma lógica vale para a fase de grupos: corrigir
+ou apagar um placar de grupo é livre enquanto a chave eliminatória ainda não tem nenhum
+jogo decidido — nesse caso a chave é recalculada automaticamente a partir da nova
+classificação. Assim que a chave tiver um resultado real, a correção é recusada pelo
+mesmo motivo (mudar quem classificou invalidaria um jogo que já aconteceu); apague
+primeiro o resultado da chave.
+
 ---
 
 ## Limitações conhecidas
@@ -567,16 +563,6 @@ o resultado de trás para frente.
   os e-mails. Se essa conta for desativada ou a senha de app expirar, o cadastro de
   novos alunos para de funcionar até alguém corrigir a credencial — o login de quem
   já tem conta continua normal.
-- "Esqueci minha senha" (self-service, por e-mail) só existe para contas de
-  autocadastro. Quem foi pré-cadastrado manualmente pela coordenação (sem e-mail)
-  continua dependendo do reset feito por ela, redefinindo depois pelo caminho
-  "Fui cadastrado pela coordenação" (busca por nome) — não há e-mail para mandar
-  link nesse caso.
-- Um aluno pode, em tese, ter duas contas (uma manual antiga + uma nova por e-mail)
-  se a coordenação já tinha cadastrado o nome dele manualmente antes do autocadastro
-  existir. O sistema não faz fusão automática dessas contas.
-- Alunos homônimos no pré-cadastro manual precisam ser diferenciados no nome do
-  cadastro (ex: acrescentando a turma). Não há campo separado de turma ou matrícula.
 - Sem upload de imagem: `escudo_url` aceita apenas uma URL.
 - O banco é SQLite local, adequado para uso em uma escola. Para vários usuários
   simultâneos, migrar para MySQL ou PostgreSQL (as consultas são SQL padrão, a troca

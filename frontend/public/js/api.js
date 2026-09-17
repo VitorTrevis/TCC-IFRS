@@ -76,14 +76,8 @@ const api = {
   esqueciSenha:         (email) => pedir('POST', '/alunos/esqueci-senha', { email }),
   redefinirSenha:       (token, senha, confirmar_senha) => pedir('POST', '/alunos/redefinir-senha', { token, senha, confirmar_senha }),
 
-  // Contas de aluno — pré-cadastro manual pela coordenação (exceção)
-  buscarAlunos:      (nome) => pedir('GET', `/alunos/buscar?nome=${encodeURIComponent(nome)}`),
-  definirSenhaAluno: (id, senha, confirmar_senha) => pedir('POST', `/alunos/${id}/definir-senha`, { senha, confirmar_senha }),
-  loginAluno:        (id, senha) => pedir('POST', '/alunos/login', { id, senha }),
-
   minhasEstatisticas:() => pedir('GET', '/alunos/eu/estatisticas'),
   listarAlunosAdmin: () => pedir('GET', '/alunos'),
-  criarAlunoAdmin:   (nome) => pedir('POST', '/alunos', { nome }),
   resetarSenhaAluno: (id) => pedir('POST', `/alunos/${id}/resetar-senha`),
 
   campeonatos:      () => pedir('GET', '/campeonatos'),

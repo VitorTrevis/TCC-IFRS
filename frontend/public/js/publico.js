@@ -2,7 +2,23 @@ montarTopo();
 
 const id = parametro('id');
 
-function cabecalho(c) {
+/** Quem levou: pela final da chave, ou pelo 1º da tabela em pontos corridos. */
+function campeaoDoCampeonato(dados) {
+  const c = dados.campeonato;
+  if (c.status !== 'finalizado') return null;
+  if (c.formato === 'pontos_corridos') return dados.classificacao[0]?.tabela?.[0]?.nome || null;
+  return campeaoDaChave(dados.partidas);
+}
+
+function cabecalho(dados) {
+  const c = dados.campeonato;
+  const campeao = campeaoDoCampeonato(dados);
+  const totalJogos = dados.partidas.length;
+  const jogados = dados.partidas.filter((p) => p.status === 'finalizada').length;
+  const gols = dados.partidas.reduce((s, p) => s + (p.status === 'finalizada' ? (p.gols_a || 0) + (p.gols_b || 0) : 0), 0);
+  const times = new Set(dados.partidas.flatMap((p) => [p.id_time_a, p.id_time_b]).filter(Boolean)).size;
+  const numero = (valor, rotulo) => `<div class="capa-numero"><b data-contar="${valor}">0</b><span>${rotulo}</span></div>`;
+
   return `
     <section class="capa">
       <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
@@ -11,12 +27,26 @@ function cabecalho(c) {
           <h1 class="mb-1">${esc(c.nome)}<span class="ponto">.</span></h1>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             ${etiqueta(c.status)}
-            ${c.data_inicio ? `<span class="small">de ${esc(dataBR(c.data_inicio))}${c.data_fim ? ` até ${esc(dataBR(c.data_fim))}` : ''}</span>` : ''}
+            ${c.data_inicio ? `<span class="small">${icone('calendario')} ${esc(dataBR(c.data_inicio))}${c.data_fim ? ` até ${esc(dataBR(c.data_fim))}` : ''}</span>` : ''}
           </div>
+          ${campeao ? `<div class="selo-campeao"><span class="trofeu">${icone('trofeu')}</span><span><small>Campeão</small>${esc(campeao)}</span></div>` : ''}
         </div>
-        <button class="btn btn-outline-light btn-sm" id="btn-link">Copiar link desta página</button>
+        <button class="btn btn-outline-light btn-sm" id="btn-link">${icone('link')}Copiar link desta página</button>
       </div>
+      ${totalJogos ? `<div class="capa-numeros">
+        ${numero(times, times === 1 ? 'time' : 'times')}
+        ${numero(jogados, `de ${totalJogos} ${totalJogos === 1 ? 'jogo' : 'jogos'}`)}
+        ${numero(gols, gols === 1 ? 'gol' : 'gols')}
+      </div>` : ''}
+      <div class="capa-marca-agua" aria-hidden="true">${iconeModalidade(c.modalidade)}</div>
     </section>`;
+}
+
+/** Contador ao lado do nome da aba ("Jogos 22"). */
+function rotularAba(id, nomeIcone, texto, quantidade) {
+  const aba = document.getElementById(id);
+  if (!aba) return;
+  aba.innerHTML = `${icone(nomeIcone)}${texto}${quantidade ? `<span class="contador-aba">${quantidade}</span>` : ''}`;
 }
 
 function jogos(dados) {
@@ -100,7 +130,7 @@ async function carregar() {
   try {
     const dados = await api.publico(id);
     document.title = `${dados.campeonato.nome} - Campeonatos Escolares`;
-    document.getElementById('cabecalho').innerHTML = cabecalho(dados.campeonato);
+    document.getElementById('cabecalho').innerHTML = cabecalho(dados);
     document.getElementById('aba-jogos').innerHTML = jogos(dados);
     document.getElementById('aba-classificacao').innerHTML = classificacaoHtml(dados);
     document.getElementById('aba-artilheiros').innerHTML = `
@@ -108,6 +138,17 @@ async function carregar() {
         <div class="cartao-cabecalho"><h2 class="h6 mb-0">Artilheiros</h2></div>
         <div class="cartao-corpo">${tabelaArtilheiros(dados.artilheiros)}</div>
       </section>`;
+
+    rotularAba('aba-btn-jogos', 'bola', 'Jogos', dados.partidas.length);
+    rotularAba('aba-btn-classificacao', 'lista', 'Classificação', 0);
+    rotularAba('aba-btn-artilheiros', 'alvo', 'Artilheiros', dados.artilheiros.length);
+
+    // confete só na primeira visita da sessão a um campeonato já decidido
+    const chaveConfete = `confete:${dados.campeonato.id}`;
+    if (campeaoDoCampeonato(dados) && !sessionStorage.getItem(chaveConfete)) {
+      sessionStorage.setItem(chaveConfete, '1');
+      setTimeout(soltarConfete, 500);
+    }
 
     document.getElementById('btn-link').onclick = async () => {
       try {

@@ -13,9 +13,10 @@ function mostrarErro(mensagem) {
 
 function mostrarSucesso(nome) {
   conteudo.innerHTML = `
-    <div class="mb-3" style="font-size:2.5rem;">✅</div>
+    <div class="check-animado">${icone('check')}</div>
     <h1 class="h4 mb-2">Conta confirmada, ${esc(nome.split(' ')[0])}!</h1>
     <p class="text-muted">Redirecionando para o seu painel...</p>`;
+  soltarConfete(2200);
 }
 
 (async () => {

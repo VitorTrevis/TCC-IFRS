@@ -18,8 +18,13 @@ function cabecalho(dados) {
 
   return `
     <section class="capa">
-      <div class="sobrancelha">Meu painel</div>
-      <h1 class="mb-1">${esc(aluno?.nome || '')}<span class="ponto">.</span></h1>
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <span class="avatar avatar-g" aria-hidden="true">${esc(iniciais(aluno?.nome))}</span>
+        <div>
+          <div class="sobrancelha">Meu painel</div>
+          <h1 class="mb-1">${esc(aluno?.nome || '')}<span class="ponto">.</span></h1>
+        </div>
+      </div>
       <p class="mb-0">Seu desempenho nos campeonatos da escola, atualizado a cada placar lançado.</p>
       <div class="capa-numeros">
         ${numero(dados.totalGols, dados.totalGols === 1 ? 'gol no total' : 'gols no total')}
@@ -27,6 +32,7 @@ function cabecalho(dados) {
         ${numero(dados.porCampeonato.length, dados.porCampeonato.length === 1 ? 'campeonato' : 'campeonatos')}
         ${numero(media, 'gols por jogo')}
       </div>
+      <div class="capa-marca-agua" aria-hidden="true">${icone('medalha')}</div>
     </section>`;
 }
 
@@ -39,24 +45,36 @@ function estatisticas(dados) {
     </div>`;
   }
 
+  const melhor = dados.partidas.reduce((m, p) => (p.meus_gols > (m?.meus_gols || 0) ? p : m), null);
+  const destaque = melhor && melhor.meus_gols > 0 ? `
+    <div class="destaque-cartao mb-3">
+      <span class="icone-destaque" aria-hidden="true">${icone('estrela')}</span>
+      <div>
+        <div class="sobrancelha">Sua melhor partida</div>
+        <b>${melhor.meus_gols} ${melhor.meus_gols === 1 ? 'gol' : 'gols'} em ${esc(melhor.time_a)} ${melhor.gols_a} x ${melhor.gols_b} ${esc(melhor.time_b)}</b>
+        <div class="text-muted small">${esc(melhor.campeonato)}</div>
+      </div>
+    </div>` : '';
+
+  const maiorGols = Math.max(1, ...dados.porCampeonato.map((c) => c.gols));
   const porCampeonato = `
     <section class="cartao mb-3">
-      <div class="cartao-cabecalho"><h2 class="h6 mb-0">Resumo por campeonato</h2></div>
+      <div class="cartao-cabecalho">
+        <h2 class="h6 mb-0">Resumo por campeonato</h2>
+        <span class="sobrancelha">gols por campeonato</span>
+      </div>
       <div class="cartao-corpo">
-        <div class="table-responsive">
-          <table class="tabela-classificacao">
-            <thead><tr><th class="text-start">Campeonato</th><th>Partidas</th><th>Gols</th><th class="d-none d-sm-table-cell">Média</th></tr></thead>
-            <tbody>
-              ${dados.porCampeonato.map((c) => `
-                <tr>
-                  <td class="text-start">${esc(c.campeonato)}</td>
-                  <td>${c.partidas}</td>
-                  <td class="destaque">${c.gols}</td>
-                  <td class="d-none d-sm-table-cell">${(c.gols / c.partidas).toFixed(1)}</td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
+        ${dados.porCampeonato.map((c) => `
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
+              <span class="fw-semibold">${esc(c.campeonato)}</span>
+              <span class="text-muted small">${c.partidas} ${c.partidas === 1 ? 'partida' : 'partidas'} &middot; média ${(c.gols / c.partidas).toFixed(1)}</span>
+            </div>
+            <div class="barra-gols">
+              <span class="trilho"><i style="width:${Math.round((c.gols / maiorGols) * 100)}%"></i></span>
+              <b>${c.gols}</b>
+            </div>
+          </div>`).join('')}
       </div>
     </section>`;
 
@@ -68,7 +86,7 @@ function estatisticas(dados) {
       </div>
       <div class="cartao-corpo pt-2">
         ${dados.partidas.map((p) => `
-          <div class="jogo">
+          <div class="jogo ${p.meus_gols ? 'meu-gol' : ''}">
             <div class="jogo-time casa">${esc(p.time_a)}</div>
             <div class="chip-placar">${p.gols_a} : ${p.gols_b}</div>
             <div class="jogo-time visitante">${esc(p.time_b)}</div>
@@ -76,14 +94,14 @@ function estatisticas(dados) {
               ${esc(p.campeonato)}${p.rodada ? ` &middot; rodada ${p.rodada}` : ''}
               ${p.fase && p.fase !== 'grupos' ? ` &middot; ${esc(FASES[p.fase] || p.fase)}` : ''}
               ${p.meus_gols
-                ? ` &middot; <strong style="color:var(--quadra)">você marcou ${p.meus_gols} ${p.meus_gols === 1 ? 'gol' : 'gols'}</strong>`
+                ? ` &middot; <strong style="color:var(--quadra)">${icone('bola')} você marcou ${p.meus_gols} ${p.meus_gols === 1 ? 'gol' : 'gols'}</strong>`
                 : ' &middot; sem gols seus nesta partida'}
             </div>
           </div>`).join('')}
       </div>
     </section>`;
 
-  return porCampeonato + jogos;
+  return destaque + porCampeonato + jogos;
 }
 
 function listaCampeonatos(campeonatos) {
@@ -95,7 +113,10 @@ function listaCampeonatos(campeonatos) {
       <div class="col-md-6 col-xl-4">
         <a class="cartao-campeonato" href="campeonato.html?id=${c.id}">
           <div class="d-flex justify-content-between align-items-start gap-2">
-            <div class="sobrancelha">${esc(c.modalidade)}</div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="selo-modalidade" aria-hidden="true">${iconeModalidade(c.modalidade)}</span>
+              <div class="sobrancelha">${esc(c.modalidade)}</div>
+            </div>
             ${etiqueta(c.status)}
           </div>
           <h3>${esc(c.nome)}</h3>

@@ -3,7 +3,7 @@ const c = require('../controllers/alunos.controller');
 const { rota } = require('../middlewares/erros');
 const {
   exigirAdmin, exigirAluno, limitarCadastroAluno, limitarReenvioConfirmacao,
-  limitarEsqueciSenha, limitarLoginAluno, limitarDefinirSenha
+  limitarEsqueciSenha, limitarLoginAluno
 } = require('../middlewares/auth');
 
 const router = Router();
@@ -17,9 +17,7 @@ router.post('/reenviar-confirmacao', limitarReenvioConfirmacao, rota(c.reenviarC
 router.post('/esqueci-senha', limitarEsqueciSenha, rota(c.esqueciSenha));
 router.post('/redefinir-senha', rota(c.redefinirSenha));
 
-// Público: fluxo de login (aceita e-mail OU id/nome de pré-cadastro manual)
-router.get('/buscar', rota(c.buscar));
-router.post('/:id/definir-senha', limitarDefinirSenha, rota(c.definirSenha));
+// Público: login (e-mail + senha)
 router.post('/login', limitarLoginAluno, rota(c.entrar));
 
 // Exclusivo do aluno logado
@@ -27,7 +25,6 @@ router.get('/eu/estatisticas', exigirAluno, rota(c.minhasEstatisticas));
 
 // Exclusivo da coordenação
 router.get('/', exigirAdmin, rota(c.listar));
-router.post('/', exigirAdmin, rota(c.criar));
 router.post('/:id/resetar-senha', exigirAdmin, rota(c.resetarSenha));
 
 module.exports = router;

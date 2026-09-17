@@ -27,10 +27,11 @@ function renderCabecalho() {
           ${etiqueta(campeonato.status)}
         </div>
         <div class="d-flex gap-2 flex-wrap">
-          <a class="btn btn-outline-light btn-sm" href="campeonato.html?id=${campeonato.id}" target="_blank" rel="noopener">Ver página pública</a>
-          <button class="btn btn-outline-danger btn-sm" id="btn-excluir">Excluir campeonato</button>
+          <a class="btn btn-outline-light btn-sm" href="campeonato.html?id=${campeonato.id}" target="_blank" rel="noopener">${icone('externo')}Ver página pública</a>
+          <button class="btn btn-outline-danger btn-sm" id="btn-excluir">${icone('lixeira')}Excluir campeonato</button>
         </div>
       </div>
+      <div class="capa-marca-agua" aria-hidden="true">${iconeModalidade(campeonato.modalidade)}</div>
     </section>`;
 
   el('btn-excluir').onclick = async () => {
@@ -52,20 +53,23 @@ function renderTimes() {
     return;
   }
 
-  el('lista-times').innerHTML = `<ul class="list-group list-group-flush">
+  el('lista-times').innerHTML = `<div>
     ${times.map((t) => `
-      <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-        <div>
-          <div class="fw-semibold">${esc(t.nome)}${t.grupo ? ` <span class="sobrancelha">grupo ${esc(t.grupo)}</span>` : ''}</div>
-          <div class="text-muted small">${t.total_jogadores} ${t.total_jogadores === 1 ? 'jogador' : 'jogadores'}</div>
+      <div class="item-time">
+        <div class="d-flex align-items-center gap-2 min-w-0">
+          <span class="escudo-inicial grande" aria-hidden="true">${esc(iniciaisTime(t.nome))}</span>
+          <div class="min-w-0">
+            <div class="fw-semibold text-truncate">${esc(t.nome)}${t.grupo ? ` <span class="sobrancelha">grupo ${esc(t.grupo)}</span>` : ''}</div>
+            <div class="text-muted small">${icone('usuarios')} ${t.total_jogadores} ${t.total_jogadores === 1 ? 'jogador' : 'jogadores'}</div>
+          </div>
         </div>
-        <div class="d-flex gap-1">
-          <button class="btn btn-sm btn-outline-primary" data-elenco="${t.id}">Elenco</button>
-          <button class="btn btn-sm btn-outline-secondary" data-renomear="${t.id}" aria-label="Renomear ${esc(t.nome)}">Renomear</button>
-          <button class="btn btn-sm btn-outline-danger" data-excluir-time="${t.id}" aria-label="Excluir ${esc(t.nome)}">&times;</button>
+        <div class="acoes">
+          <button class="btn btn-sm btn-outline-primary" data-elenco="${t.id}">${icone('usuarios')}Elenco</button>
+          <button class="btn btn-sm btn-outline-secondary" data-renomear="${t.id}" aria-label="Renomear ${esc(t.nome)}" title="Renomear">${icone('lapis')}</button>
+          <button class="btn btn-sm btn-outline-danger" data-excluir-time="${t.id}" aria-label="Excluir ${esc(t.nome)}" title="Excluir">${icone('lixeira')}</button>
         </div>
-      </li>`).join('')}
-  </ul>`;
+      </div>`).join('')}
+  </div>`;
 
   el('lista-times').querySelectorAll('[data-elenco]').forEach((b) => {
     b.onclick = () => abrirElenco(Number(b.dataset.elenco));
@@ -89,7 +93,7 @@ function renderTimes() {
   });
 }
 
-el('btn-add-time').onclick = async () => {
+el('btn-add-time').onclick = () => comCarregamento(el('btn-add-time'), async () => {
   const campo = el('novo-time');
   const nome = campo.value.trim();
   if (!nome) { avisar('Escreva o nome do time.', 'erro'); campo.focus(); return; }
@@ -99,7 +103,7 @@ el('btn-add-time').onclick = async () => {
     campo.focus();
     await recarregar();
   } catch (e) { avisar(e.message, 'erro'); }
-};
+});
 el('novo-time').addEventListener('keydown', (e) => { if (e.key === 'Enter') el('btn-add-time').click(); });
 
 // ------------------------------------------------------------------ elencos
@@ -115,13 +119,17 @@ async function carregarAlunosCadastrados() {
   }
 }
 
-/** Resolve o texto do campo "aluno" em { id_aluno } ou { aluno_novo_nome }, ou {} se vazio. */
+/** Resolve o texto do campo "aluno" em { id_aluno } se bater com um aluno j\u00e1
+ *  cadastrado, ou {} caso contr\u00e1rio (v\u00ednculo com aluno \u00e9 opcional). */
 function resolverCampoAluno() {
   const texto = el('novo-aluno').value.trim();
   if (!texto) return {};
   const normalizar = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const existente = alunosCadastrados.find((a) => normalizar(a.nome) === normalizar(texto));
-  return existente ? { id_aluno: existente.id } : { aluno_novo_nome: texto };
+  if (!existente) {
+    avisar(`"${texto}" n\u00e3o bate com nenhum aluno cadastrado \u2014 o jogador foi salvo sem v\u00ednculo de conta.`, 'erro');
+  }
+  return existente ? { id_aluno: existente.id } : {};
 }
 
 async function abrirElenco(idTime) {
@@ -136,21 +144,29 @@ async function abrirElenco(idTime) {
 async function listarJogadores() {
   const jogadores = await api.jogadores(timeAberto.id);
   el('lista-jogadores').innerHTML = jogadores.length
-    ? `<ul class="list-group list-group-flush">
+    ? `<div>
         ${jogadores.map((j) => `
-          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-            <span>${j.numero !== null ? `<span class="posicao me-2">${j.numero}</span>` : ''}${esc(j.nome)}
-              ${j.aluno_nome ? `<span class="etiqueta etiqueta-em_andamento ms-2">conta: ${esc(j.aluno_nome)}</span>` : ''}
-              ${j.gols ? `<span class="text-muted small ms-2">${j.gols} ${j.gols === 1 ? 'gol' : 'gols'}</span>` : ''}</span>
-            <button class="btn btn-sm btn-outline-danger" data-excluir-jogador="${j.id}" aria-label="Excluir ${esc(j.nome)}">&times;</button>
-          </li>`).join('')}
-      </ul>`
+          <div class="item-time">
+            <span class="d-flex align-items-center gap-2 flex-wrap">
+              ${j.numero !== null ? `<span class="posicao">${j.numero}</span>` : ''}
+              <span class="fw-semibold">${esc(j.nome)}</span>
+              ${j.aluno_nome ? `<span class="etiqueta etiqueta-em_andamento">${icone('usuario')} ${esc(j.aluno_nome)}</span>` : ''}
+              ${j.gols ? `<span class="text-muted small">${icone('bola')} ${j.gols} ${j.gols === 1 ? 'gol' : 'gols'}</span>` : ''}
+            </span>
+            <button class="btn btn-sm btn-outline-danger" data-excluir-jogador="${j.id}" aria-label="Excluir ${esc(j.nome)}" title="Excluir">${icone('lixeira')}</button>
+          </div>`).join('')}
+      </div>`
     : '<div class="vazio">Nenhum jogador cadastrado neste time.</div>';
 
   el('lista-jogadores').querySelectorAll('[data-excluir-jogador]').forEach((b) => {
     b.onclick = async () => {
+      const jogador = jogadores.find((j) => j.id === Number(b.dataset.excluirJogador));
+      const mensagem = jogador.gols
+        ? `Excluir "${jogador.nome}"? Isso também apaga permanentemente ${jogador.gols} ${jogador.gols === 1 ? 'gol marcado por ele' : 'gols marcados por ele'}.`
+        : `Excluir "${jogador.nome}"?`;
+      if (!(await confirmarAcao(mensagem, 'Excluir'))) return;
       try {
-        await api.removerJogador(Number(b.dataset.excluirJogador));
+        await api.removerJogador(jogador.id);
         await listarJogadores();
         await recarregar(false);
       } catch (e) { avisar(e.message, 'erro'); }
@@ -158,7 +174,7 @@ async function listarJogadores() {
   });
 }
 
-el('btn-add-jogador').onclick = async () => {
+el('btn-add-jogador').onclick = () => comCarregamento(el('btn-add-jogador'), async () => {
   const nome = el('novo-jogador').value.trim();
   const numero = el('novo-numero').value;
   if (!nome) { avisar('Escreva o nome do jogador.', 'erro'); return; }
@@ -174,22 +190,24 @@ el('btn-add-jogador').onclick = async () => {
     await listarJogadores();
     await recarregar(false);
   } catch (e) { avisar(e.message, 'erro'); }
-};
+});
 el('novo-jogador').addEventListener('keydown', (e) => { if (e.key === 'Enter') el('btn-add-jogador').click(); });
 
 // ------------------------------------------------------------------ partidas
 el('btn-gerar').onclick = async () => {
   const jaTem = partidas.length > 0;
-  if (jaTem && !(await confirmarAcao('Gerar a tabela de novo apaga todos os jogos e placares ja lancados. Continuar?', 'Gerar de novo'))) return;
-  try {
-    await api.gerarTabela(campeonato.id);
-    avisar('Tabela de jogos gerada.', 'sucesso');
-    await recarregar();
-  } catch (e) { avisar(e.message, 'erro'); }
+  if (jaTem && !(await confirmarAcao('Gerar a tabela de novo apaga todos os jogos e placares já lançados. Continuar?', 'Gerar de novo'))) return;
+  await comCarregamento(el('btn-gerar'), async () => {
+    try {
+      await api.gerarTabela(campeonato.id);
+      avisar('Tabela de jogos gerada.', 'sucesso');
+      await recarregar();
+    } catch (e) { avisar(e.message, 'erro'); }
+  });
 };
 
 function renderPartidas() {
-  el('btn-gerar').textContent = partidas.length ? 'Gerar tabela de novo' : 'Gerar tabela de jogos';
+  el('btn-gerar').innerHTML = partidas.length ? `${icone('desfazer')}Gerar tabela de novo` : `${icone('raio')}Gerar tabela de jogos`;
 
   if (!partidas.length) {
     el('lista-partidas').innerHTML = `<div class="vazio"><strong>Sem jogos ainda</strong>
@@ -206,7 +224,7 @@ function renderPartidas() {
     return `<div class="jogo-marcadores">
       <button class="btn btn-sm ${p.status === 'finalizada' ? 'btn-outline-secondary' : 'btn-primary'}"
               data-placar="${p.id}">
-        ${p.status === 'finalizada' ? 'Editar placar' : 'Lançar placar'}
+        ${p.status === 'finalizada' ? `${icone('lapis')}Editar placar` : `${icone('apito')}Lançar placar`}
       </button></div>`;
   };
 
@@ -250,7 +268,7 @@ async function abrirPlacar(idPartida) {
   const coluna = (nomeTime, jogadores, ladoId, golsIniciais) => `
     <div class="col-6">
       <div class="sobrancelha mb-1">${esc(nomeTime)}</div>
-      <input class="form-control form-control-lg mb-2" type="number" min="0" max="999"
+      <input class="form-control form-control-lg entrada-placar mb-2" type="number" min="0" max="999"
              id="placar-${ladoId}" value="${golsIniciais ?? 0}" aria-label="Gols de ${esc(nomeTime)}">
       ${jogadores.length ? jogadores.map((j) => `
         <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
@@ -306,7 +324,7 @@ async function abrirPlacar(idPartida) {
   modalPlacar.show();
 }
 
-el('btn-salvar-placar').onclick = async () => {
+el('btn-salvar-placar').onclick = () => comCarregamento(el('btn-salvar-placar'), async () => {
   const p = partidaAberta;
   const gols = [...el('corpo-placar').querySelectorAll('[data-lado]')]
     .map((c) => ({ id_jogador: Number(c.id.replace('jog-', '')), quantidade: Number(c.value) || 0 }))
@@ -328,7 +346,7 @@ el('btn-salvar-placar').onclick = async () => {
     avisar('Placar salvo. Classificação atualizada.', 'sucesso');
     await recarregar();
   } catch (e) { avisar(e.message, 'erro'); }
-};
+});
 
 el('btn-apagar-placar').onclick = async () => {
   if (!(await confirmarAcao('Apagar o resultado desta partida?', 'Apagar resultado'))) return;

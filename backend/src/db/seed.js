@@ -47,12 +47,6 @@ function criarCampeonato(dados) {
   }).lastInsertRowid;
 }
 
-/** Cria um aluno pré-cadastrado manualmente pela coordenação (exceção: sem e-mail,
- *  sem senha até o primeiro acesso). */
-function criarAluno(nome) {
-  return db.prepare('INSERT INTO alunos (nome) VALUES (?)').run(nome).lastInsertRowid;
-}
-
 /** Cria um aluno pelo caminho normal: autocadastro com e-mail institucional já
  *  verificado e senha definida (simula quem já passou pelo fluxo completo). */
 function criarAlunoAutocadastrado(nome, email, senha) {
@@ -154,13 +148,13 @@ console.log(`Limpando ${ARQUIVO_DB} ...`);
 limparTudo();
 
 // ---- Alunos de demonstração ------------------------------------------------
-// Vitor: caminho normal (autocadastro com e-mail institucional, já verificado).
-// Ramiro: exceção (pré-cadastro manual pela coordenação, sem e-mail, primeiro
-// acesso ainda pendente) — mostra os dois fluxos funcionando no mesmo seed.
+// Ambos pelo caminho normal: autocadastro com e-mail institucional, já verificado.
 const idVitor = criarAlunoAutocadastrado(
   'Vitor Trevisan', 'vitor.trevisan@aluno.farroupilha.ifrs.edu.br', 'vitor123'
 );
-const idRamiro = criarAluno('Ramiro Severgnini');
+const idRamiro = criarAlunoAutocadastrado(
+  'Ramiro Severgnini', 'ramiro.severgnini@aluno.farroupilha.ifrs.edu.br', 'ramiro123'
+);
 
 // ---- Campeonato 1: pontos corridos, com metade das rodadas já jogadas -----
 const futsal = criarCampeonato({
@@ -251,5 +245,5 @@ console.log(`  ${SENHA_ADMIN}`);
 console.log('');
 console.log('Alunos de demonstração:');
 console.log('  Vitor Trevisan  — login: vitor.trevisan@aluno.farroupilha.ifrs.edu.br / senha: vitor123');
-console.log('  Ramiro Severgnini — pré-cadastro manual (exceção), sem senha ainda: define no "Fui cadastrado pela coordenação"');
+console.log('  Ramiro Severgnini — login: ramiro.severgnini@aluno.farroupilha.ifrs.edu.br / senha: ramiro123');
 console.log('');

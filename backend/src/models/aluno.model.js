@@ -1,25 +1,6 @@
 const { db } = require('../db');
 
-const normalizar = (s) => String(s || '')
-  .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
-  .toLowerCase().trim();
-
 const porId = (id) => db.prepare('SELECT * FROM alunos WHERE id = ?').get(id);
-
-/** Busca tolerante a acentos e caixa. Usada tanto pelo aluno quanto pelo admin. */
-function buscarPorNome(nome) {
-  const alvo = normalizar(nome);
-  if (!alvo) return [];
-  return db.prepare('SELECT id, nome, senha_hash FROM alunos').all()
-    .filter((a) => normalizar(a.nome).includes(alvo))
-    .map((a) => ({ id: a.id, nome: a.nome, tem_senha: Boolean(a.senha_hash) }));
-}
-
-/** Igualdade exata (normalizada) — usada no login. */
-function porNomeExato(nome) {
-  const alvo = normalizar(nome);
-  return db.prepare('SELECT * FROM alunos').all().find((a) => normalizar(a.nome) === alvo);
-}
 
 const listar = () => db.prepare(`
   SELECT a.id, a.nome, a.email, a.email_verificado, a.criado_em,
@@ -27,14 +8,6 @@ const listar = () => db.prepare(`
          (SELECT COUNT(*) FROM jogadores j WHERE j.id_aluno = a.id) AS total_vinculos
   FROM alunos a ORDER BY a.nome
 `).all();
-
-const existeNome = (nome) => Boolean(porNomeExato(nome));
-
-const criar = (nome) => db.prepare('INSERT INTO alunos (nome) VALUES (?)')
-  .run(nome.trim()).lastInsertRowid;
-
-const definirSenha = (id, senha_hash) =>
-  db.prepare('UPDATE alunos SET senha_hash = ? WHERE id = ?').run(senha_hash, id);
 
 const resetarSenha = (id) =>
   db.prepare('UPDATE alunos SET senha_hash = NULL WHERE id = ?').run(id);
@@ -152,8 +125,7 @@ function estatisticas(idAluno) {
 }
 
 module.exports = {
-  porId, buscarPorNome, porNomeExato, listar, existeNome,
-  criar, definirSenha, resetarSenha, estatisticas,
+  porId, listar, resetarSenha, estatisticas,
   porEmail, existeEmail, criarComEmail, atualizarTokenVerificacao,
   porTokenValido, marcarEmailVerificado,
   definirTokenReset, porTokenResetValido, redefinirSenhaComToken

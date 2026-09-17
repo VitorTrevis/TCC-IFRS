@@ -5,15 +5,14 @@ let modal;
 
 function cartao(c) {
   const gerenciar = Sessao.ehAdmin
-    ? `<a class="btn btn-sm btn-outline-primary mt-3" href="admin-campeonato.html?id=${c.id}">Gerenciar</a>`
+    ? `<a class="btn btn-sm btn-outline-primary mt-3" href="admin-campeonato.html?id=${c.id}">${icone('prancheta')}Gerenciar</a>`
     : '';
-  const inicial = (c.modalidade || '?').trim().charAt(0).toUpperCase();
   return `
     <div class="col-md-6 col-xl-4">
       <div class="cartao-campeonato">
         <div class="d-flex justify-content-between align-items-start gap-2">
           <div class="d-flex align-items-center gap-2">
-            <span class="selo-modalidade" aria-hidden="true">${esc(inicial)}</span>
+            <span class="selo-modalidade" aria-hidden="true">${iconeModalidade(c.modalidade)}</span>
             <div class="sobrancelha">${esc(c.modalidade)}</div>
           </div>
           ${etiqueta(c.status)}
@@ -24,9 +23,10 @@ function cartao(c) {
           ${c.total_times} ${c.total_times === 1 ? 'time' : 'times'} &middot;
           ${c.total_partidas} ${c.total_partidas === 1 ? 'jogo' : 'jogos'}
         </div>
-        ${c.data_inicio ? `<div class="text-muted small mt-1">Começa em ${esc(dataBR(c.data_inicio))}</div>` : ''}
+        ${c.data_inicio ? `<div class="text-muted small mt-1">${icone('calendario')} ${esc(dataBR(c.data_inicio))}${c.data_fim ? ` até ${esc(dataBR(c.data_fim))}` : ''}</div>` : ''}
+        ${pilulaContagem(c)}
         <div class="d-flex gap-2">
-          <a class="btn btn-sm btn-primary mt-3" href="campeonato.html?id=${c.id}">Acompanhar</a>
+          <a class="btn btn-sm btn-primary mt-3" href="campeonato.html?id=${c.id}">${icone('trofeu')}Acompanhar</a>
           ${gerenciar}
         </div>
       </div>
@@ -86,7 +86,7 @@ document.getElementById('btn-novo').onclick = () => {
   modal.show();
 };
 
-document.getElementById('btn-salvar-campeonato').onclick = async () => {
+document.getElementById('btn-salvar-campeonato').onclick = () => comCarregamento(document.getElementById('btn-salvar-campeonato'), async () => {
   const dados = {
     nome: document.getElementById('c-nome').value.trim(),
     modalidade: document.getElementById('c-modalidade').value.trim(),
@@ -104,6 +104,9 @@ document.getElementById('btn-salvar-campeonato').onclick = async () => {
   } catch (e) {
     avisar(e.message, 'erro');
   }
-};
+});
+
+document.getElementById('btn-novo').innerHTML = `${icone('mais')}Criar campeonato`;
+document.getElementById('marca-agua-capa').innerHTML = icone('trofeu');
 
 carregar();

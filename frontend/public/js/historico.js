@@ -7,15 +7,14 @@ montarTopo('historico');
 const el = (i) => document.getElementById(i);
 
 /** `criado_em` vem do SQLite em UTC, formato 'YYYY-MM-DD HH:MM:SS'. */
-function formatarData(valor) {
+function paraData(valor) {
   const d = new Date(`${valor.replace(' ', 'T')}Z`);
-  if (Number.isNaN(d.getTime())) return valor;
-  return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-const ICONES = {
-  criar: '➕', editar: '✏️', remover: '🗑️',
-  gerar_tabela: '📋', lancar_placar: '⚽', apagar_placar: '↩️', resetar_senha: '🔑'
+const ICONE_ACAO = {
+  criar: 'mais', editar: 'lapis', remover: 'lixeira',
+  gerar_tabela: 'lista', lancar_placar: 'bola', apagar_placar: 'desfazer', resetar_senha: 'chave'
 };
 
 function render(lista) {
@@ -28,21 +27,23 @@ function render(lista) {
     return;
   }
 
-  el('lista-historico').innerHTML = `<ul class="list-group list-group-flush">
-    ${lista.map((h) => `
-      <li class="list-group-item px-0">
-        <div class="d-flex justify-content-between align-items-start gap-2">
-          <div>
-            <span aria-hidden="true">${ICONES[h.acao] || '•'}</span>
-            <strong>${esc(h.nome)}</strong> ${esc(h.descricao)}
-          </div>
-          <span class="text-muted small text-nowrap">${esc(formatarData(h.criado_em))}</span>
-        </div>
-      </li>`).join('')}
+  el('lista-historico').innerHTML = `<ul class="linha-tempo">
+    ${lista.map((h) => {
+      const data = paraData(h.criado_em);
+      const relativo = data ? tempoRelativo(data) : h.criado_em;
+      const exato = data ? data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+      return `
+        <li class="evento evento-${esc(h.acao)}">
+          <span class="evento-icone" aria-hidden="true">${icone(ICONE_ACAO[h.acao] || 'info')}</span>
+          <div class="evento-texto"><strong>${esc(h.nome)}</strong> ${esc(h.descricao)}</div>
+          <div class="evento-quando" title="${esc(exato)}">${esc(relativo)}<span class="exato">${esc(exato)}</span></div>
+        </li>`;
+    }).join('')}
   </ul>`;
 }
 
 async function carregar() {
+  el('lista-historico').innerHTML = esqueleto(6);
   try {
     render(await api.historico());
   } catch (e) {

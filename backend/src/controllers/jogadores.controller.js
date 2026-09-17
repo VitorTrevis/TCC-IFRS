@@ -17,19 +17,13 @@ function numeroValido(valor) {
   return n;
 }
 
-/** Resolve o vínculo com aluno: usa id_aluno existente, ou cria um aluno novo se pedido. */
+/** Resolve o vínculo com aluno: só aceita id_aluno de uma conta já existente
+ *  (autocadastro por e-mail) — não há mais criação de aluno pelo nome digitado. */
 function resolverIdAluno(corpo) {
   if (corpo.id_aluno) {
     const aluno = Aluno.porId(corpo.id_aluno);
     if (!aluno) falha(400, 'O aluno informado não existe.');
     return aluno.id;
-  }
-  const nomeNovo = (corpo.aluno_novo_nome || '').toString().trim();
-  if (nomeNovo) {
-    if (Aluno.existeNome(nomeNovo)) {
-      falha(400, `Já existe um aluno pré-cadastrado como "${nomeNovo}". Selecione-o na busca em vez de criar de novo.`);
-    }
-    return Aluno.criar(nomeNovo);
   }
   return null;
 }
@@ -59,11 +53,9 @@ function atualizar(req, res) {
   const nome = (req.body?.nome || '').toString().trim();
   if (!nome) falha(400, 'Informe o nome do jogador.');
 
-  // só mexe no vínculo com aluno se o pedido trouxer id_aluno/aluno_novo_nome;
-  // caso contrário preserva o vínculo atual (evita apagar sem querer ao só
-  // renomear o jogador).
-  const veioAlgumCampoDeAluno = req.body?.id_aluno !== undefined || req.body?.aluno_novo_nome !== undefined;
-  const id_aluno = veioAlgumCampoDeAluno ? resolverIdAluno(req.body || {}) : jogador.id_aluno;
+  // só mexe no vínculo com aluno se o pedido trouxer id_aluno; caso contrário
+  // preserva o vínculo atual (evita apagar sem querer ao só renomear o jogador).
+  const id_aluno = req.body?.id_aluno !== undefined ? resolverIdAluno(req.body || {}) : jogador.id_aluno;
 
   Jogador.atualizar(jogador.id, { nome, numero: numeroValido(req.body?.numero), id_aluno });
   Historico.registrar({
@@ -78,10 +70,13 @@ function atualizar(req, res) {
 function remover(req, res) {
   const jogador = Jogador.porId(req.params.id);
   if (!jogador) falha(404, 'Jogador não encontrado.');
+  const gols = Jogador.totalGols(jogador.id);
   Jogador.remover(jogador.id);
   Historico.registrar({
     nome: req.admin.nome, acao: 'remover', entidade: 'jogador', entidade_id: jogador.id,
-    descricao: `excluiu o jogador "${jogador.nome}"`
+    descricao: gols
+      ? `excluiu o jogador "${jogador.nome}" (e ${gols} ${gols === 1 ? 'gol marcado' : 'gols marcados'} por ele)`
+      : `excluiu o jogador "${jogador.nome}"`
   });
   res.status(204).end();
 }

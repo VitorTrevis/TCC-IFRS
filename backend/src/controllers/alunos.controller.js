@@ -106,8 +106,6 @@ async function reenviarConfirmacao(req, res) {
 }
 
 // ------------------------------------------------- esqueci minha senha (aluno)
-// Só se aplica a contas de autocadastro (tem e-mail). O pré-cadastro manual usa
-// o reset feito pela coordenação (ver `resetarSenha` mais abaixo).
 
 /** Gera um token de redefinição e manda por e-mail, se a conta existir.
  *  Sempre responde a mesma mensagem, exista ou não a conta — mesmo motivo do
@@ -147,53 +145,18 @@ async function redefinirSenha(req, res) {
   res.json({ token: gerarTokenAluno(publico), aluno: publico });
 }
 
-// --------------------------------------------- fluxo de pré-cadastro manual
-// (exceção: usado pela coordenação para casos sem e-mail institucional à mão)
-
-/** Busca pública usada no login de contas pré-cadastradas manualmente (sem e-mail). */
-function buscar(req, res) {
-  const nome = (req.query.nome || '').toString();
-  if (nome.trim().length < 2) falha(400, 'Digite ao menos 2 letras do nome.');
-  res.json(Aluno.buscarPorNome(nome));
-}
-
-/** Primeiro acesso: define a senha de um aluno pré-cadastrado manualmente. */
-function definirSenha(req, res) {
-  const aluno = Aluno.porId(req.params.id);
-  if (!aluno) falha(404, 'Aluno não encontrado.');
-  if (aluno.senha_hash) {
-    falha(400, 'Este aluno já definiu a senha. Peça para a coordenação resetar se precisar trocar.');
-  }
-
-  const { senha, confirmar_senha } = req.body || {};
-  if (!senha || String(senha).length < 6) falha(400, 'A senha precisa ter pelo menos 6 caracteres.');
-  if (senha !== confirmar_senha) falha(400, 'As senhas não são iguais.');
-
-  Aluno.definirSenha(aluno.id, bcrypt.hashSync(String(senha), 10));
-  const atualizado = { id: aluno.id, nome: aluno.nome };
-  res.status(201).json({ token: gerarTokenAluno(atualizado), aluno: atualizado });
-}
-
 // ------------------------------------------------------------- login (aluno)
 
-/** Login por e-mail (autocadastro) ou por id/nome (pré-cadastro manual). */
 function entrar(req, res) {
-  const { id, nome, email, senha } = req.body || {};
+  const { email, senha } = req.body || {};
   if (!senha) falha(400, 'Informe a senha.');
+  if (!email) falha(400, 'Informe o e-mail.');
 
-  let aluno;
-  if (email) {
-    aluno = Aluno.porEmail(email);
-    if (!aluno) falha(404, 'E-mail não encontrado. Confira ou crie uma conta.');
-    if (!aluno.email_verificado) {
-      falha(403, 'Confirme seu e-mail antes de entrar — veja o link que mandamos na sua caixa de entrada.');
-    }
-  } else {
-    aluno = id ? Aluno.porId(id) : Aluno.porNomeExato(nome || '');
-    if (!aluno) falha(404, 'Aluno não encontrado. Confira o nome ou fale com a coordenação.');
+  const aluno = Aluno.porEmail(email);
+  if (!aluno) falha(404, 'E-mail não encontrado. Confira ou crie uma conta.');
+  if (!aluno.email_verificado) {
+    falha(403, 'Confirme seu e-mail antes de entrar — veja o link que mandamos na sua caixa de entrada.');
   }
-
-  if (!aluno.senha_hash) falha(400, 'Este é o seu primeiro acesso: defina uma senha antes de entrar.');
   if (!bcrypt.compareSync(String(senha), aluno.senha_hash)) falha(401, 'Senha incorreta.');
 
   const publico = { id: aluno.id, nome: aluno.nome };
@@ -210,19 +173,9 @@ function listar(req, res) {
   res.json(Aluno.listar());
 }
 
-/** Pré-cadastro manual pela coordenação — exceção para quem não tem e-mail institucional à mão. */
-function criar(req, res) {
-  const nome = (req.body?.nome || '').toString().trim();
-  if (!nome) falha(400, 'Informe o nome completo do aluno.');
-  if (Aluno.existeNome(nome)) falha(400, `Já existe um aluno pré-cadastrado como "${nome}". Diferencie o nome (ex: com a turma) se for outra pessoa.`);
-  const id = Aluno.criar(nome);
-  Historico.registrar({
-    nome: req.admin.nome, acao: 'criar', entidade: 'aluno', entidade_id: id,
-    descricao: `pré-cadastrou o aluno "${nome}"`
-  });
-  res.status(201).json(Aluno.porId(id));
-}
-
+/** Reseta a senha de um aluno (autocadastro por e-mail). Ele define uma nova
+ *  sozinho pelo "Esqueci minha senha" — o reset não cria nenhum jeito de
+ *  reivindicar a conta sem provar posse do e-mail de novo. */
 function resetarSenha(req, res) {
   const aluno = Aluno.porId(req.params.id);
   if (!aluno) falha(404, 'Aluno não encontrado.');
@@ -232,13 +185,13 @@ function resetarSenha(req, res) {
     descricao: `resetou a senha de "${aluno.nome}"`
   });
   res.json({
-    mensagem: `Senha de ${aluno.nome} foi resetada. Ele define uma nova em "Fui cadastrado pela coordenação" na tela de login, buscando pelo próprio nome.`
+    mensagem: `Senha de ${aluno.nome} foi resetada. Ele define uma nova em "Esqueci minha senha" na tela de login, usando o e-mail institucional.`
   });
 }
 
 module.exports = {
   cadastrarPorEmail, confirmarEmail, reenviarConfirmacao,
   esqueciSenha, redefinirSenha,
-  buscar, definirSenha, entrar, minhasEstatisticas,
-  listar, criar, resetarSenha
+  entrar, minhasEstatisticas,
+  listar, resetarSenha
 };

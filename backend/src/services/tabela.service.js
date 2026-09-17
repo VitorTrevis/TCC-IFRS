@@ -324,49 +324,72 @@ function gerarTabela(campeonato) {
 }
 
 /**
- * Quando todas as partidas de grupo terminam, preenche a primeira fase
- * do mata-mata com os times realmente classificados. Idempotente.
+ * Verdadeiro se algum jogo da chave eliminatória (fora da fase de grupos) já
+ * foi decidido por um placar real. Nesse ponto a classificação dos grupos não
+ * pode mais mudar sem invalidar um resultado que já aconteceu de verdade —
+ * usado para travar correções tardias na fase de grupos (ver
+ * `travarSeChaveJaComecou` em partidas.controller.js). Não conta jogos com
+ * status `bye`: esses são avanços mecânicos por causa do formato da chave,
+ * não uma decisão que precise ser protegida.
+ */
+function chaveTemResultado(idCampeonato) {
+  return db.prepare(`
+    SELECT COUNT(*) AS n FROM partidas
+    WHERE id_campeonato = ? AND fase <> 'grupos' AND status = 'finalizada'
+  `).get(idCampeonato).n > 0;
+}
+
+/**
+ * Sincroniza a chave eliminatória com a classificação atual dos grupos.
+ * Chamada sempre que um placar da fase de grupos muda — inclusive numa
+ * correção depois que a chave já tinha sido preenchida uma vez. Por isso
+ * sempre reseta a chave inteira antes de recalcular: só é alcançada quando
+ * `chaveTemResultado()` já garantiu que nenhum jogo da chave foi realmente
+ * jogado, então não existe resultado de verdade para perder ao reconstruir
+ * do zero (o pior caso é desfazer avanços por bye, que são só mecânicos).
+ * Se a fase de grupos ainda não terminou, a chave fica em branco.
  */
 function preencherMataMataComClassificados(idCampeonato) {
   const campeonato = db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(idCampeonato);
   if (!campeonato || campeonato.formato !== 'grupos_mata_mata') return false;
 
-  const pendentes = db.prepare(`
-    SELECT COUNT(*) AS n FROM partidas
-    WHERE id_campeonato = ? AND fase = 'grupos' AND status NOT IN ('finalizada','bye')
-  `).get(idCampeonato).n;
-  if (pendentes > 0) return false;
+  return db.transaction(() => {
+    db.prepare(`
+      UPDATE partidas SET id_time_a = NULL, id_time_b = NULL, status = 'agendada'
+      WHERE id_campeonato = ? AND fase <> 'grupos'
+    `).run(idCampeonato);
 
-  // Primeira fase da chave = maior quantidade de partidas fora de 'grupos'
-  const fases = db.prepare(`
-    SELECT fase, COUNT(*) AS n FROM partidas
-    WHERE id_campeonato = ? AND fase <> 'grupos'
-    GROUP BY fase ORDER BY n DESC LIMIT 1
-  `).get(idCampeonato);
-  if (!fases) return false;
+    const pendentes = db.prepare(`
+      SELECT COUNT(*) AS n FROM partidas
+      WHERE id_campeonato = ? AND fase = 'grupos' AND status NOT IN ('finalizada','bye')
+    `).get(idCampeonato).n;
+    if (pendentes > 0) return false;
 
-  const partidas = db.prepare(`
-    SELECT * FROM partidas WHERE id_campeonato = ? AND fase = ? ORDER BY ordem_chave
-  `).all(idCampeonato, fases.fase);
+    // Primeira fase da chave = maior quantidade de partidas fora de 'grupos'
+    const fases = db.prepare(`
+      SELECT fase, COUNT(*) AS n FROM partidas
+      WHERE id_campeonato = ? AND fase <> 'grupos'
+      GROUP BY fase ORDER BY n DESC LIMIT 1
+    `).get(idCampeonato);
+    if (!fases) return false;
 
-  const jaPreenchida = partidas.some((p) => p.id_time_a || p.id_time_b);
-  if (jaPreenchida) return false;
+    const partidas = db.prepare(`
+      SELECT * FROM partidas WHERE id_campeonato = ? AND fase = ? ORDER BY ordem_chave
+    `).all(idCampeonato, fases.fase);
 
-  const letras = db.prepare(`
-    SELECT DISTINCT grupo FROM times WHERE id_campeonato = ? AND grupo IS NOT NULL ORDER BY grupo
-  `).all(idCampeonato).map((r) => r.grupo);
+    const letras = db.prepare(`
+      SELECT DISTINCT grupo FROM times WHERE id_campeonato = ? AND grupo IS NOT NULL ORDER BY grupo
+    `).all(idCampeonato).map((r) => r.grupo);
 
-  const mapa = new Map(); // "1º do Grupo A" -> id do time
-  for (const letra of letras) {
-    const tabela = classificacaoDoGrupo(idCampeonato, letra);
-    tabela.forEach((linha, i) => mapa.set(`${i + 1}º do Grupo ${letra}`, linha.id_time));
-  }
+    const mapa = new Map(); // "1º do Grupo A" -> id do time
+    for (const letra of letras) {
+      const tabela = classificacaoDoGrupo(idCampeonato, letra);
+      tabela.forEach((linha, i) => mapa.set(`${i + 1}º do Grupo ${letra}`, linha.id_time));
+    }
 
-  const atualizar = db.prepare(
-    'UPDATE partidas SET id_time_a = ?, id_time_b = ? WHERE id = ?'
-  );
-
-  db.transaction(() => {
+    const atualizar = db.prepare(
+      'UPDATE partidas SET id_time_a = ?, id_time_b = ? WHERE id = ?'
+    );
     for (const p of partidas) {
       const a = mapa.get(p.rotulo_a) || null;
       const b = mapa.get(p.rotulo_b) || null;
@@ -375,15 +398,16 @@ function preencherMataMataComClassificados(idCampeonato) {
     for (const p of partidas) {
       resolverBye(db.prepare('SELECT * FROM partidas WHERE id = ?').get(p.id));
     }
-  })();
 
-  return true;
+    return true;
+  })();
 }
 
 module.exports = {
   gerarTabela,
   promoverVencedor,
   preencherMataMataComClassificados,
+  chaveTemResultado,
   rotuloFase,
   roundRobin,
   ordemSeeds

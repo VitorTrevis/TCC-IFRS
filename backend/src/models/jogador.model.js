@@ -22,6 +22,9 @@ const atualizar = (id, { nome, numero, id_aluno }) => db.prepare(
   'UPDATE jogadores SET nome = ?, numero = ?, id_aluno = ? WHERE id = ?'
 ).run(nome.trim(), numero ?? null, id_aluno ?? null, id);
 
+const totalGols = (id) =>
+  db.prepare('SELECT COALESCE(SUM(quantidade), 0) AS n FROM gols WHERE id_jogador = ?').get(id).n;
+
 const remover = (id) => db.prepare('DELETE FROM jogadores WHERE id = ?').run(id);
 
-module.exports = { listarPorTime, porId, criar, atualizar, remover };
+module.exports = { listarPorTime, porId, criar, atualizar, remover, totalGols };
