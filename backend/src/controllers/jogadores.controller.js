@@ -4,8 +4,8 @@ const Aluno = require('../models/aluno.model');
 const Historico = require('../models/historico.model');
 const { falha } = require('../middlewares/erros');
 
-function timeOuFalha(id) {
-  const t = Time.porId(id);
+async function timeOuFalha(id) {
+  const t = await Time.porId(id);
   if (!t) falha(404, 'Time não encontrado.');
   return t;
 }
@@ -19,60 +19,60 @@ function numeroValido(valor) {
 
 /** Resolve o vínculo com aluno: só aceita id_aluno de uma conta já existente
  *  (autocadastro por e-mail) — não há mais criação de aluno pelo nome digitado. */
-function resolverIdAluno(corpo) {
+async function resolverIdAluno(corpo) {
   if (corpo.id_aluno) {
-    const aluno = Aluno.porId(corpo.id_aluno);
+    const aluno = await Aluno.porId(corpo.id_aluno);
     if (!aluno) falha(400, 'O aluno informado não existe.');
     return aluno.id;
   }
   return null;
 }
 
-function listar(req, res) {
-  timeOuFalha(req.params.id);
-  res.json(Jogador.listarPorTime(req.params.id));
+async function listar(req, res) {
+  await timeOuFalha(req.params.id);
+  res.json(await Jogador.listarPorTime(req.params.id));
 }
 
-function criar(req, res) {
-  const time = timeOuFalha(req.params.id);
+async function criar(req, res) {
+  const time = await timeOuFalha(req.params.id);
   const nome = (req.body?.nome || '').toString().trim();
   if (!nome) falha(400, 'Informe o nome do jogador.');
   const numero = numeroValido(req.body?.numero);
-  const id_aluno = resolverIdAluno(req.body || {});
-  const id = Jogador.criar({ nome, numero, id_time: time.id, id_aluno });
-  Historico.registrar({
+  const id_aluno = await resolverIdAluno(req.body || {});
+  const id = await Jogador.criar({ nome, numero, id_time: time.id, id_aluno });
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'criar', entidade: 'jogador', entidade_id: id,
     descricao: `adicionou "${nome}" ao time "${time.nome}"`
   });
-  res.status(201).json(Jogador.porId(id));
+  res.status(201).json(await Jogador.porId(id));
 }
 
-function atualizar(req, res) {
-  const jogador = Jogador.porId(req.params.id);
+async function atualizar(req, res) {
+  const jogador = await Jogador.porId(req.params.id);
   if (!jogador) falha(404, 'Jogador não encontrado.');
   const nome = (req.body?.nome || '').toString().trim();
   if (!nome) falha(400, 'Informe o nome do jogador.');
 
   // só mexe no vínculo com aluno se o pedido trouxer id_aluno; caso contrário
   // preserva o vínculo atual (evita apagar sem querer ao só renomear o jogador).
-  const id_aluno = req.body?.id_aluno !== undefined ? resolverIdAluno(req.body || {}) : jogador.id_aluno;
+  const id_aluno = req.body?.id_aluno !== undefined ? await resolverIdAluno(req.body || {}) : jogador.id_aluno;
 
-  Jogador.atualizar(jogador.id, { nome, numero: numeroValido(req.body?.numero), id_aluno });
-  Historico.registrar({
+  await Jogador.atualizar(jogador.id, { nome, numero: numeroValido(req.body?.numero), id_aluno });
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'editar', entidade: 'jogador', entidade_id: jogador.id,
     descricao: nome !== jogador.nome
       ? `renomeou o jogador "${jogador.nome}" para "${nome}"`
       : `editou o jogador "${jogador.nome}"`
   });
-  res.json(Jogador.porId(jogador.id));
+  res.json(await Jogador.porId(jogador.id));
 }
 
-function remover(req, res) {
-  const jogador = Jogador.porId(req.params.id);
+async function remover(req, res) {
+  const jogador = await Jogador.porId(req.params.id);
   if (!jogador) falha(404, 'Jogador não encontrado.');
-  const gols = Jogador.totalGols(jogador.id);
-  Jogador.remover(jogador.id);
-  Historico.registrar({
+  const gols = await Jogador.totalGols(jogador.id);
+  await Jogador.remover(jogador.id);
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'remover', entidade: 'jogador', entidade_id: jogador.id,
     descricao: gols
       ? `excluiu o jogador "${jogador.nome}" (e ${gols} ${gols === 1 ? 'gol marcado' : 'gols marcados'} por ele)`

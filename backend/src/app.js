@@ -6,7 +6,17 @@ const { inicializar } = require('./db');
 const rotas = require('./routes');
 const { naoEncontrado, tratarErro } = require('./middlewares/erros');
 
-inicializar();
+// A inicializacao do banco agora e assincrona (cliente libSQL/Turso), entao
+// nao da mais pra rodar de forma sincrona no topo do arquivo como antes.
+// Esse middleware garante que o schema existe antes de qualquer rota rodar,
+// tanto localmente (uma vez, no primeiro request) quanto na Vercel (uma vez
+// por "cold start" — a promise fica em cache, entao os requests seguintes
+// na mesma instancia nao esperam de novo).
+let prontoPromise = null;
+function garantirInicializado() {
+  if (!prontoPromise) prontoPromise = inicializar();
+  return prontoPromise;
+}
 
 const app = express();
 // Hospedado atrás de um proxy reverso (função serverless da Vercel). Sem isso,
@@ -18,6 +28,10 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json());
+app.use(async (req, res, next) => {
+  try { await garantirInicializado(); next(); }
+  catch (e) { next(e); }
+});
 
 // API
 app.use('/api', rotas);

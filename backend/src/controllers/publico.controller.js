@@ -8,12 +8,12 @@ const { classificacao, artilheiros } = require('../services/classificacao.servic
  * Endpoint único, sem login, com tudo que a página pública precisa (RF07).
  * Uma requisição só evita quatro chamadas em sequência no celular do aluno.
  */
-function verCampeonato(req, res) {
-  const campeonato = Campeonato.porId(req.params.id);
+async function verCampeonato(req, res) {
+  const campeonato = await Campeonato.porId(req.params.id);
   if (!campeonato) falha(404, 'Campeonato nao encontrado.');
 
-  const partidas = Partida.listarPorCampeonato(campeonato.id);
-  const gols = Partida.golsPorCampeonato(campeonato.id);
+  const partidas = await Partida.listarPorCampeonato(campeonato.id);
+  const gols = await Partida.golsPorCampeonato(campeonato.id);
   const porPartida = new Map();
   for (const g of gols) {
     if (!porPartida.has(g.id_partida)) porPartida.set(g.id_partida, []);
@@ -22,13 +22,13 @@ function verCampeonato(req, res) {
 
   res.json({
     campeonato,
-    times: Time.listarPorCampeonato(campeonato.id),
+    times: await Time.listarPorCampeonato(campeonato.id),
     partidas: partidas.map((p) => ({ ...p, gols: porPartida.get(p.id) || [] })),
-    classificacao: classificacao(campeonato.id),
-    artilheiros: artilheiros(campeonato.id)
+    classificacao: await classificacao(campeonato.id),
+    artilheiros: await artilheiros(campeonato.id)
   });
 }
 
-const listarCampeonatos = (req, res) => res.json(Campeonato.listar());
+const listarCampeonatos = async (req, res) => res.json(await Campeonato.listar());
 
 module.exports = { verCampeonato, listarCampeonatos };

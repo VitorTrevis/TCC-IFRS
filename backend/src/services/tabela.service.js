@@ -88,9 +88,9 @@ function roundRobin(itens, idaEVolta = false) {
 }
 
 /** Apaga toda a tabela de jogos de um campeonato (usado ao regerar). */
-function limparPartidas(idCampeonato) {
-  db.prepare('DELETE FROM partidas WHERE id_campeonato = ?').run(idCampeonato);
-  db.prepare('UPDATE times SET grupo = NULL WHERE id_campeonato = ?').run(idCampeonato);
+async function limparPartidas(idCampeonato) {
+  await db.prepare('DELETE FROM partidas WHERE id_campeonato = ?').run(idCampeonato);
+  await db.prepare('UPDATE times SET grupo = NULL WHERE id_campeonato = ?').run(idCampeonato);
 }
 
 const inserirPartida = () => db.prepare(`
@@ -102,13 +102,14 @@ const inserirPartida = () => db.prepare(`
      @ordem_chave, @id_proxima_partida, @slot_proxima, @status)
 `);
 
-function novaPartida(dados) {
+async function novaPartida(dados) {
   const base = {
     id_time_a: null, id_time_b: null, rotulo_a: null, rotulo_b: null,
     rodada: null, fase: 'grupos', grupo: null, ordem_chave: null,
     id_proxima_partida: null, slot_proxima: null, status: 'agendada'
   };
-  return inserirPartida().run({ ...base, ...dados }).lastInsertRowid;
+  const r = await inserirPartida().run({ ...base, ...dados });
+  return r.lastInsertRowid;
 }
 
 /**
@@ -116,7 +117,7 @@ function novaPartida(dados) {
  * ligando cada partida à sua próxima. `pares` tem tamanho potência de 2
  * e cada item é { a, b, rotuloA, rotuloB } (a/b podem ser null).
  */
-function montarChave(idCampeonato, pares, rodadaInicial = 1) {
+async function montarChave(idCampeonato, pares, rodadaInicial = 1) {
   const totalPrimeiraFase = pares.length;
   const tamanhos = [];
   for (let m = 1; m <= totalPrimeiraFase; m *= 2) tamanhos.push(m);
@@ -137,7 +138,7 @@ function montarChave(idCampeonato, pares, rodadaInicial = 1) {
       const idProxima = nivel === 0 ? null : idsPorNivel[nivel - 1][Math.floor(j / 2)];
       const slot = nivel === 0 ? null : (j % 2 === 0 ? 'a' : 'b');
 
-      ids.push(novaPartida({
+      ids.push(await novaPartida({
         id_campeonato: idCampeonato,
         id_time_a: par ? par.a : null,
         id_time_b: par ? par.b : null,
@@ -156,44 +157,44 @@ function montarChave(idCampeonato, pares, rodadaInicial = 1) {
   // Rótulos das fases seguintes: "Vencedor Quartas 3"
   for (let nivel = 0; nivel < totalNiveis - 1; nivel++) {
     const faseAnterior = rotuloFase(nomeFase(tamanhos[nivel + 1]));
-    idsPorNivel[nivel].forEach((id, j) => {
-      db.prepare('UPDATE partidas SET rotulo_a = ?, rotulo_b = ? WHERE id = ?').run(
+    for (const [j, id] of idsPorNivel[nivel].entries()) {
+      await db.prepare('UPDATE partidas SET rotulo_a = ?, rotulo_b = ? WHERE id = ?').run(
         `Vencedor ${faseAnterior} ${j * 2 + 1}`,
         `Vencedor ${faseAnterior} ${j * 2 + 2}`,
         id
       );
-    });
+    }
   }
 
   // Byes da primeira fase: quem não tem adversário avança na hora.
   const primeiraFase = idsPorNivel[totalNiveis - 1];
   for (const id of primeiraFase) {
-    const p = db.prepare('SELECT * FROM partidas WHERE id = ?').get(id);
-    resolverBye(p);
+    const p = await db.prepare('SELECT * FROM partidas WHERE id = ?').get(id);
+    await resolverBye(p);
   }
 
   return idsPorNivel;
 }
 
 /** Se a partida tem exatamente um time definido e o outro lado é bye, avança direto. */
-function resolverBye(partida) {
+async function resolverBye(partida) {
   if (!partida) return false;
   const soUm = (partida.id_time_a && partida.rotulo_b === 'BYE' && !partida.id_time_b)
     || (partida.id_time_b && partida.rotulo_a === 'BYE' && !partida.id_time_a);
   if (!soUm) return false;
 
   const vencedor = partida.id_time_a || partida.id_time_b;
-  db.prepare("UPDATE partidas SET status = 'bye' WHERE id = ?").run(partida.id);
-  promoverVencedor(partida, vencedor);
+  await db.prepare("UPDATE partidas SET status = 'bye' WHERE id = ?").run(partida.id);
+  await promoverVencedor(partida, vencedor);
   return true;
 }
 
 /** Coloca o time vencedor no slot correspondente da próxima partida da chave. */
-function promoverVencedor(partida, idVencedor) {
+async function promoverVencedor(partida, idVencedor) {
   if (!partida.id_proxima_partida) return;
   const coluna = partida.slot_proxima === 'a' ? 'id_time_a' : 'id_time_b';
   const rotulo = partida.slot_proxima === 'a' ? 'rotulo_a' : 'rotulo_b';
-  db.prepare(`UPDATE partidas SET ${coluna} = ?, ${rotulo} = NULL WHERE id = ?`)
+  await db.prepare(`UPDATE partidas SET ${coluna} = ?, ${rotulo} = NULL WHERE id = ?`)
     .run(idVencedor, partida.id_proxima_partida);
 }
 
@@ -201,21 +202,21 @@ function promoverVencedor(partida, idVencedor) {
 // Geradores por formato
 // ---------------------------------------------------------------------------
 
-function gerarPontosCorridos(campeonato, times) {
+async function gerarPontosCorridos(campeonato, times) {
   const rodadas = roundRobin(times.map((t) => t.id), campeonato.turno_returno === 1);
-  rodadas.forEach((jogos, i) => {
-    jogos.forEach(([a, b]) => {
-      novaPartida({
+  for (const [i, jogos] of rodadas.entries()) {
+    for (const [a, b] of jogos) {
+      await novaPartida({
         id_campeonato: campeonato.id,
         id_time_a: a, id_time_b: b,
         rodada: i + 1, fase: 'grupos'
       });
-    });
-  });
+    }
+  }
   return { rodadas: rodadas.length, partidas: rodadas.flat().length };
 }
 
-function gerarMataMata(campeonato, times) {
+async function gerarMataMata(campeonato, times) {
   const tamanho = potenciaDe2(times.length);
   const seeds = ordemSeeds(tamanho);
   const pares = [];
@@ -232,11 +233,11 @@ function gerarMataMata(campeonato, times) {
     });
   }
 
-  montarChave(campeonato.id, pares, 1);
+  await montarChave(campeonato.id, pares, 1);
   return { fases: Math.log2(tamanho), partidas: tamanho - 1 };
 }
 
-function gerarGruposMataMata(campeonato, times) {
+async function gerarGruposMataMata(campeonato, times) {
   const porGrupo = Math.max(2, campeonato.tamanho_grupo || 4);
   const qtdGrupos = Math.max(2, Math.ceil(times.length / porGrupo));
   const grupos = Array.from({ length: qtdGrupos }, () => []);
@@ -251,22 +252,22 @@ function gerarGruposMataMata(campeonato, times) {
   const atualizarGrupo = db.prepare('UPDATE times SET grupo = ? WHERE id = ?');
   let maiorRodada = 0;
 
-  grupos.forEach((timesDoGrupo, g) => {
+  for (const [g, timesDoGrupo] of grupos.entries()) {
     const letra = LETRAS[g];
-    timesDoGrupo.forEach((t) => atualizarGrupo.run(letra, t.id));
+    for (const t of timesDoGrupo) await atualizarGrupo.run(letra, t.id);
 
     const rodadas = roundRobin(timesDoGrupo.map((t) => t.id), campeonato.turno_returno === 1);
-    rodadas.forEach((jogos, i) => {
-      jogos.forEach(([a, b]) => {
-        novaPartida({
+    for (const [i, jogos] of rodadas.entries()) {
+      for (const [a, b] of jogos) {
+        await novaPartida({
           id_campeonato: campeonato.id,
           id_time_a: a, id_time_b: b,
           rodada: i + 1, fase: 'grupos', grupo: letra
         });
-      });
-    });
+      }
+    }
     maiorRodada = Math.max(maiorRodada, rodadas.length);
-  });
+  }
 
   // Chave eliminatória montada com rótulos ("1º do Grupo A") até o fim dos grupos.
   const porGrupoClassificam = Math.max(1, campeonato.classificados_grupo || 2);
@@ -288,13 +289,13 @@ function gerarGruposMataMata(campeonato, times) {
     });
   }
 
-  montarChave(campeonato.id, pares, maiorRodada + 1);
+  await montarChave(campeonato.id, pares, maiorRodada + 1);
   return { grupos: qtdGrupos, classificados: rotulos.length };
 }
 
 /** Ponto de entrada usado pelo controller. */
-function gerarTabela(campeonato) {
-  const times = db.prepare(
+async function gerarTabela(campeonato) {
+  const times = await db.prepare(
     'SELECT * FROM times WHERE id_campeonato = ? ORDER BY id'
   ).all(campeonato.id);
 
@@ -305,18 +306,18 @@ function gerarTabela(campeonato) {
     throw erro;
   }
 
-  const transacao = db.transaction(() => {
-    limparPartidas(campeonato.id);
+  const transacao = db.transaction(async () => {
+    await limparPartidas(campeonato.id);
     let resumo;
-    if (campeonato.formato === 'pontos_corridos') resumo = gerarPontosCorridos(campeonato, times);
-    else if (campeonato.formato === 'mata_mata') resumo = gerarMataMata(campeonato, times);
-    else if (campeonato.formato === 'grupos_mata_mata') resumo = gerarGruposMataMata(campeonato, times);
+    if (campeonato.formato === 'pontos_corridos') resumo = await gerarPontosCorridos(campeonato, times);
+    else if (campeonato.formato === 'mata_mata') resumo = await gerarMataMata(campeonato, times);
+    else if (campeonato.formato === 'grupos_mata_mata') resumo = await gerarGruposMataMata(campeonato, times);
     else {
       const erro = new Error(`Formato inválido: ${campeonato.formato}`);
       erro.status = 400;
       throw erro;
     }
-    db.prepare("UPDATE campeonatos SET status = 'em_andamento' WHERE id = ?").run(campeonato.id);
+    await db.prepare("UPDATE campeonatos SET status = 'em_andamento' WHERE id = ?").run(campeonato.id);
     return resumo;
   });
 
@@ -332,11 +333,12 @@ function gerarTabela(campeonato) {
  * status `bye`: esses são avanços mecânicos por causa do formato da chave,
  * não uma decisão que precise ser protegida.
  */
-function chaveTemResultado(idCampeonato) {
-  return db.prepare(`
+async function chaveTemResultado(idCampeonato) {
+  const r = await db.prepare(`
     SELECT COUNT(*) AS n FROM partidas
     WHERE id_campeonato = ? AND fase <> 'grupos' AND status = 'finalizada'
-  `).get(idCampeonato).n > 0;
+  `).get(idCampeonato);
+  return r.n > 0;
 }
 
 /**
@@ -349,41 +351,42 @@ function chaveTemResultado(idCampeonato) {
  * do zero (o pior caso é desfazer avanços por bye, que são só mecânicos).
  * Se a fase de grupos ainda não terminou, a chave fica em branco.
  */
-function preencherMataMataComClassificados(idCampeonato) {
-  const campeonato = db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(idCampeonato);
+async function preencherMataMataComClassificados(idCampeonato) {
+  const campeonato = await db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(idCampeonato);
   if (!campeonato || campeonato.formato !== 'grupos_mata_mata') return false;
 
-  return db.transaction(() => {
-    db.prepare(`
+  return db.transaction(async () => {
+    await db.prepare(`
       UPDATE partidas SET id_time_a = NULL, id_time_b = NULL, status = 'agendada'
       WHERE id_campeonato = ? AND fase <> 'grupos'
     `).run(idCampeonato);
 
-    const pendentes = db.prepare(`
+    const pendentesLinha = await db.prepare(`
       SELECT COUNT(*) AS n FROM partidas
       WHERE id_campeonato = ? AND fase = 'grupos' AND status NOT IN ('finalizada','bye')
-    `).get(idCampeonato).n;
-    if (pendentes > 0) return false;
+    `).get(idCampeonato);
+    if (pendentesLinha.n > 0) return false;
 
     // Primeira fase da chave = maior quantidade de partidas fora de 'grupos'
-    const fases = db.prepare(`
+    const fases = await db.prepare(`
       SELECT fase, COUNT(*) AS n FROM partidas
       WHERE id_campeonato = ? AND fase <> 'grupos'
       GROUP BY fase ORDER BY n DESC LIMIT 1
     `).get(idCampeonato);
     if (!fases) return false;
 
-    const partidas = db.prepare(`
+    const partidas = await db.prepare(`
       SELECT * FROM partidas WHERE id_campeonato = ? AND fase = ? ORDER BY ordem_chave
     `).all(idCampeonato, fases.fase);
 
-    const letras = db.prepare(`
+    const linhasLetras = await db.prepare(`
       SELECT DISTINCT grupo FROM times WHERE id_campeonato = ? AND grupo IS NOT NULL ORDER BY grupo
-    `).all(idCampeonato).map((r) => r.grupo);
+    `).all(idCampeonato);
+    const letras = linhasLetras.map((r) => r.grupo);
 
     const mapa = new Map(); // "1º do Grupo A" -> id do time
     for (const letra of letras) {
-      const tabela = classificacaoDoGrupo(idCampeonato, letra);
+      const tabela = await classificacaoDoGrupo(idCampeonato, letra);
       tabela.forEach((linha, i) => mapa.set(`${i + 1}º do Grupo ${letra}`, linha.id_time));
     }
 
@@ -393,10 +396,10 @@ function preencherMataMataComClassificados(idCampeonato) {
     for (const p of partidas) {
       const a = mapa.get(p.rotulo_a) || null;
       const b = mapa.get(p.rotulo_b) || null;
-      atualizar.run(a, b, p.id);
+      await atualizar.run(a, b, p.id);
     }
     for (const p of partidas) {
-      resolverBye(db.prepare('SELECT * FROM partidas WHERE id = ?').get(p.id));
+      await resolverBye(await db.prepare('SELECT * FROM partidas WHERE id = ?').get(p.id));
     }
 
     return true;

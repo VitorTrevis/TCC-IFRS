@@ -12,9 +12,12 @@ const existeNome = (idCampeonato, nome, ignorarId = 0) => db.prepare(`
   WHERE id_campeonato = ? AND LOWER(nome) = LOWER(?) AND id <> ?
 `).get(idCampeonato, nome.trim(), ignorarId);
 
-const criar = ({ nome, id_campeonato, escudo_url }) => db.prepare(
-  'INSERT INTO times (nome, id_campeonato, escudo_url) VALUES (?, ?, ?)'
-).run(nome.trim(), id_campeonato, escudo_url || null).lastInsertRowid;
+const criar = async ({ nome, id_campeonato, escudo_url }) => {
+  const r = await db.prepare(
+    'INSERT INTO times (nome, id_campeonato, escudo_url) VALUES (?, ?, ?)'
+  ).run(nome.trim(), id_campeonato, escudo_url || null);
+  return r.lastInsertRowid;
+};
 
 const atualizar = (id, { nome, escudo_url }) => db.prepare(
   'UPDATE times SET nome = ?, escudo_url = ? WHERE id = ?'

@@ -18,14 +18,15 @@ const resetarSenha = (id) =>
 const porEmail = (email) => db.prepare('SELECT * FROM alunos WHERE email = ?')
   .get(String(email || '').trim().toLowerCase());
 
-const existeEmail = (email) => Boolean(porEmail(email));
+const existeEmail = async (email) => Boolean(await porEmail(email));
 
 /** Cria a conta já com senha e token de verificação pendente (email_verificado = 0). */
-function criarComEmail({ nome, email, senha_hash, tokenHash, expiraEm }) {
-  return db.prepare(`
+async function criarComEmail({ nome, email, senha_hash, tokenHash, expiraEm }) {
+  const r = await db.prepare(`
     INSERT INTO alunos (nome, email, senha_hash, email_verificado, token_verificacao, token_expira)
     VALUES (?, ?, ?, 0, ?, ?)
-  `).run(nome.trim(), String(email).trim().toLowerCase(), senha_hash, tokenHash, expiraEm).lastInsertRowid;
+  `).run(nome.trim(), String(email).trim().toLowerCase(), senha_hash, tokenHash, expiraEm);
+  return r.lastInsertRowid;
 }
 
 /** Troca o token pendente (usado tanto na criação quanto no reenvio). */
@@ -66,8 +67,8 @@ const redefinirSenhaComToken = (id, senha_hash) => db.prepare(`
 `).run(senha_hash, id);
 
 /** Todas as partidas finalizadas em que o aluno marcou gol ou fez parte do elenco. */
-function estatisticas(idAluno) {
-  const jogadores = db.prepare('SELECT id, id_time FROM jogadores WHERE id_aluno = ?').all(idAluno);
+async function estatisticas(idAluno) {
+  const jogadores = await db.prepare('SELECT id, id_time FROM jogadores WHERE id_aluno = ?').all(idAluno);
   if (!jogadores.length) return { partidas: [], totalPartidas: 0, totalGols: 0, porCampeonato: [] };
 
   const idsJogador = jogadores.map((j) => j.id);
@@ -77,7 +78,7 @@ function estatisticas(idAluno) {
   const timeMarcador = idsTime.map(() => '?').join(',');
 
   // partidas finalizadas em que um dos times do aluno jogou
-  const partidas = db.prepare(`
+  const partidas = await db.prepare(`
     SELECT p.*, ta.nome AS time_a, tb.nome AS time_b,
            c.id AS id_campeonato, c.nome AS campeonato, c.formato
     FROM partidas p
@@ -88,12 +89,11 @@ function estatisticas(idAluno) {
     ORDER BY p.id DESC
   `).all(...idsTime, ...idsTime);
 
-  const golsPorPartida = new Map(
-    db.prepare(`
-      SELECT id_partida, SUM(quantidade) AS gols FROM gols
-      WHERE id_jogador IN (${marcador}) GROUP BY id_partida
-    `).all(...idsJogador).map((r) => [r.id_partida, r.gols])
-  );
+  const golsPorPartidaLinhas = await db.prepare(`
+    SELECT id_partida, SUM(quantidade) AS gols FROM gols
+    WHERE id_jogador IN (${marcador}) GROUP BY id_partida
+  `).all(...idsJogador);
+  const golsPorPartida = new Map(golsPorPartidaLinhas.map((r) => [r.id_partida, r.gols]));
 
   const partidasComGol = partidas
     .filter((p) => golsPorPartida.has(p.id) || [p.id_time_a, p.id_time_b].some((t) => idsTime.includes(t)))

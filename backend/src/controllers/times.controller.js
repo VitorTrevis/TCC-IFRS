@@ -4,68 +4,68 @@ const Partida = require('../models/partida.model');
 const Historico = require('../models/historico.model');
 const { falha } = require('../middlewares/erros');
 
-function campeonatoOuFalha(id) {
-  const c = Campeonato.porId(id);
+async function campeonatoOuFalha(id) {
+  const c = await Campeonato.porId(id);
   if (!c) falha(404, 'Campeonato não encontrado.');
   return c;
 }
 
-function timeOuFalha(id) {
-  const t = Time.porId(id);
+async function timeOuFalha(id) {
+  const t = await Time.porId(id);
   if (!t) falha(404, 'Time não encontrado.');
   return t;
 }
 
-function tabelaJaGerada(idCampeonato) {
-  return Partida.listarPorCampeonato(idCampeonato).length > 0;
+async function tabelaJaGerada(idCampeonato) {
+  return (await Partida.listarPorCampeonato(idCampeonato)).length > 0;
 }
 
-function listar(req, res) {
-  campeonatoOuFalha(req.params.id);
-  res.json(Time.listarPorCampeonato(req.params.id));
+async function listar(req, res) {
+  await campeonatoOuFalha(req.params.id);
+  res.json(await Time.listarPorCampeonato(req.params.id));
 }
 
-function criar(req, res) {
-  const campeonato = campeonatoOuFalha(req.params.id);
+async function criar(req, res) {
+  const campeonato = await campeonatoOuFalha(req.params.id);
   const nome = (req.body?.nome || '').toString().trim();
   if (!nome) falha(400, 'Informe o nome do time.');
-  if (Time.existeNome(campeonato.id, nome)) falha(400, `Já existe um time chamado "${nome}" neste campeonato.`);
-  if (tabelaJaGerada(campeonato.id)) {
+  if (await Time.existeNome(campeonato.id, nome)) falha(400, `Já existe um time chamado "${nome}" neste campeonato.`);
+  if (await tabelaJaGerada(campeonato.id)) {
     falha(400, 'A tabela de jogos já foi gerada. Gere a tabela de novo para incluir este time.');
   }
 
-  const id = Time.criar({ nome, id_campeonato: campeonato.id, escudo_url: req.body?.escudo_url });
-  Historico.registrar({
+  const id = await Time.criar({ nome, id_campeonato: campeonato.id, escudo_url: req.body?.escudo_url });
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'criar', entidade: 'time', entidade_id: id,
     descricao: `criou o time "${nome}" em "${campeonato.nome}"`
   });
-  res.status(201).json(Time.porId(id));
+  res.status(201).json(await Time.porId(id));
 }
 
-function atualizar(req, res) {
-  const time = timeOuFalha(req.params.id);
+async function atualizar(req, res) {
+  const time = await timeOuFalha(req.params.id);
   const nome = (req.body?.nome || '').toString().trim();
   if (!nome) falha(400, 'Informe o nome do time.');
-  if (Time.existeNome(time.id_campeonato, nome, time.id)) {
+  if (await Time.existeNome(time.id_campeonato, nome, time.id)) {
     falha(400, `Já existe um time chamado "${nome}" neste campeonato.`);
   }
-  Time.atualizar(time.id, { nome, escudo_url: req.body?.escudo_url });
-  Historico.registrar({
+  await Time.atualizar(time.id, { nome, escudo_url: req.body?.escudo_url });
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'editar', entidade: 'time', entidade_id: time.id,
     descricao: nome !== time.nome
       ? `renomeou o time "${time.nome}" para "${nome}"`
       : `editou o time "${time.nome}"`
   });
-  res.json(Time.porId(time.id));
+  res.json(await Time.porId(time.id));
 }
 
-function remover(req, res) {
-  const time = timeOuFalha(req.params.id);
-  if (tabelaJaGerada(time.id_campeonato)) {
+async function remover(req, res) {
+  const time = await timeOuFalha(req.params.id);
+  if (await tabelaJaGerada(time.id_campeonato)) {
     falha(400, 'A tabela de jogos já foi gerada. Apague a tabela ou gere de novo antes de remover times.');
   }
-  Time.remover(time.id);
-  Historico.registrar({
+  await Time.remover(time.id);
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'remover', entidade: 'time', entidade_id: time.id,
     descricao: `excluiu o time "${time.nome}"`
   });

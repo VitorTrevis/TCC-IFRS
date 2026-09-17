@@ -48,12 +48,12 @@ async function cadastrarPorEmail(req, res) {
   }
   if (!senha || String(senha).length < 6) falha(400, 'A senha precisa ter pelo menos 6 caracteres.');
   if (senha !== confirmar_senha) falha(400, 'As senhas não são iguais.');
-  if (Aluno.existeEmail(email)) {
+  if (await Aluno.existeEmail(email)) {
     falha(400, 'Já existe uma conta com esse e-mail. Tente entrar, ou use "reenviar confirmação" se ainda não ativou.');
   }
 
   const tokenBruto = gerarTokenBruto();
-  Aluno.criarComEmail({
+  await Aluno.criarComEmail({
     nome, email,
     senha_hash: bcrypt.hashSync(String(senha), 10),
     tokenHash: hashToken(tokenBruto),
@@ -76,10 +76,10 @@ async function confirmarEmail(req, res) {
   const tokenBruto = (req.query.token || '').toString();
   if (!tokenBruto) falha(400, 'Link inválido.');
 
-  const aluno = Aluno.porTokenValido(hashToken(tokenBruto));
+  const aluno = await Aluno.porTokenValido(hashToken(tokenBruto));
   if (!aluno) falha(400, 'Esse link expirou ou já foi usado. Peça um novo em "reenviar confirmação".');
 
-  Aluno.marcarEmailVerificado(aluno.id);
+  await Aluno.marcarEmailVerificado(aluno.id);
   const publico = { id: aluno.id, nome: aluno.nome };
   res.json({ token: gerarTokenAluno(publico), aluno: publico });
 }
@@ -91,10 +91,10 @@ async function reenviarConfirmacao(req, res) {
   const email = (req.body?.email || '').toString().trim().toLowerCase();
   if (!email) falha(400, 'Informe o e-mail.');
 
-  const aluno = Aluno.porEmail(email);
+  const aluno = await Aluno.porEmail(email);
   if (aluno && !aluno.email_verificado) {
     const tokenBruto = gerarTokenBruto();
-    Aluno.atualizarTokenVerificacao(aluno.id, hashToken(tokenBruto), expiraEmIso());
+    await Aluno.atualizarTokenVerificacao(aluno.id, hashToken(tokenBruto), expiraEmIso());
     try {
       await enviarConfirmacao({ nome: aluno.nome, email: aluno.email, tokenBruto });
     } catch (e) {
@@ -114,10 +114,10 @@ async function esqueciSenha(req, res) {
   const email = (req.body?.email || '').toString().trim().toLowerCase();
   if (!email) falha(400, 'Informe o e-mail.');
 
-  const aluno = Aluno.porEmail(email);
+  const aluno = await Aluno.porEmail(email);
   if (aluno) {
     const tokenBruto = gerarTokenBruto();
-    Aluno.definirTokenReset(aluno.id, hashToken(tokenBruto), expiraResetEmIso());
+    await Aluno.definirTokenReset(aluno.id, hashToken(tokenBruto), expiraResetEmIso());
     try {
       await enviarRedefinicaoSenha({ nome: aluno.nome, email: aluno.email, tokenBruto });
     } catch (e) {
@@ -137,22 +137,22 @@ async function redefinirSenha(req, res) {
   if (!senha || String(senha).length < 6) falha(400, 'A senha precisa ter pelo menos 6 caracteres.');
   if (senha !== confirmar_senha) falha(400, 'As senhas não são iguais.');
 
-  const aluno = Aluno.porTokenResetValido(hashToken(tokenBruto));
+  const aluno = await Aluno.porTokenResetValido(hashToken(tokenBruto));
   if (!aluno) falha(400, 'Esse link expirou ou já foi usado. Peça uma nova redefinição.');
 
-  Aluno.redefinirSenhaComToken(aluno.id, bcrypt.hashSync(String(senha), 10));
+  await Aluno.redefinirSenhaComToken(aluno.id, bcrypt.hashSync(String(senha), 10));
   const publico = { id: aluno.id, nome: aluno.nome };
   res.json({ token: gerarTokenAluno(publico), aluno: publico });
 }
 
 // ------------------------------------------------------------- login (aluno)
 
-function entrar(req, res) {
+async function entrar(req, res) {
   const { email, senha } = req.body || {};
   if (!senha) falha(400, 'Informe a senha.');
   if (!email) falha(400, 'Informe o e-mail.');
 
-  const aluno = Aluno.porEmail(email);
+  const aluno = await Aluno.porEmail(email);
   if (!aluno) falha(404, 'E-mail não encontrado. Confira ou crie uma conta.');
   if (!aluno.email_verificado) {
     falha(403, 'Confirme seu e-mail antes de entrar — veja o link que mandamos na sua caixa de entrada.');
@@ -163,24 +163,24 @@ function entrar(req, res) {
   res.json({ token: gerarTokenAluno(publico), aluno: publico });
 }
 
-function minhasEstatisticas(req, res) {
-  res.json(Aluno.estatisticas(req.aluno.id));
+async function minhasEstatisticas(req, res) {
+  res.json(await Aluno.estatisticas(req.aluno.id));
 }
 
 // --------------------------------------------------------- rotas de admin
 
-function listar(req, res) {
-  res.json(Aluno.listar());
+async function listar(req, res) {
+  res.json(await Aluno.listar());
 }
 
 /** Reseta a senha de um aluno (autocadastro por e-mail). Ele define uma nova
  *  sozinho pelo "Esqueci minha senha" — o reset não cria nenhum jeito de
  *  reivindicar a conta sem provar posse do e-mail de novo. */
-function resetarSenha(req, res) {
-  const aluno = Aluno.porId(req.params.id);
+async function resetarSenha(req, res) {
+  const aluno = await Aluno.porId(req.params.id);
   if (!aluno) falha(404, 'Aluno não encontrado.');
-  Aluno.resetarSenha(aluno.id);
-  Historico.registrar({
+  await Aluno.resetarSenha(aluno.id);
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'resetar_senha', entidade: 'aluno', entidade_id: aluno.id,
     descricao: `resetou a senha de "${aluno.nome}"`
   });

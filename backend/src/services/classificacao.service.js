@@ -65,17 +65,17 @@ function confrontoDireto(partidas, ids) {
  * Classificação de um grupo. `grupo` = null significa "todos os times do
  * campeonato numa tabela só" (formato pontos corridos).
  */
-function classificacaoDoGrupo(idCampeonato, grupo = null) {
+async function classificacaoDoGrupo(idCampeonato, grupo = null) {
   const times = grupo === null
-    ? db.prepare('SELECT * FROM times WHERE id_campeonato = ? ORDER BY nome').all(idCampeonato)
-    : db.prepare('SELECT * FROM times WHERE id_campeonato = ? AND grupo = ? ORDER BY nome')
+    ? await db.prepare('SELECT * FROM times WHERE id_campeonato = ? ORDER BY nome').all(idCampeonato)
+    : await db.prepare('SELECT * FROM times WHERE id_campeonato = ? AND grupo = ? ORDER BY nome')
         .all(idCampeonato, grupo);
 
   const partidas = grupo === null
-    ? db.prepare(`SELECT * FROM partidas
+    ? await db.prepare(`SELECT * FROM partidas
                   WHERE id_campeonato = ? AND fase = 'grupos' AND status = 'finalizada'`)
         .all(idCampeonato)
-    : db.prepare(`SELECT * FROM partidas
+    : await db.prepare(`SELECT * FROM partidas
                   WHERE id_campeonato = ? AND fase = 'grupos' AND grupo = ? AND status = 'finalizada'`)
         .all(idCampeonato, grupo);
 
@@ -125,26 +125,27 @@ function classificacaoDoGrupo(idCampeonato, grupo = null) {
 }
 
 /** Classificação completa: uma tabela por grupo, ou tabela única. */
-function classificacao(idCampeonato) {
-  const campeonato = db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(idCampeonato);
+async function classificacao(idCampeonato) {
+  const campeonato = await db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(idCampeonato);
   if (!campeonato) return [];
 
   if (campeonato.formato === 'mata_mata') return [];
 
-  const grupos = db.prepare(`
+  const linhasGrupo = await db.prepare(`
     SELECT DISTINCT grupo FROM times
     WHERE id_campeonato = ? AND grupo IS NOT NULL ORDER BY grupo
-  `).all(idCampeonato).map((r) => r.grupo);
+  `).all(idCampeonato);
+  const grupos = linhasGrupo.map((r) => r.grupo);
 
   if (grupos.length === 0) {
-    return [{ grupo: null, tabela: classificacaoDoGrupo(idCampeonato, null) }];
+    return [{ grupo: null, tabela: await classificacaoDoGrupo(idCampeonato, null) }];
   }
-  return grupos.map((g) => ({ grupo: g, tabela: classificacaoDoGrupo(idCampeonato, g) }));
+  return Promise.all(grupos.map(async (g) => ({ grupo: g, tabela: await classificacaoDoGrupo(idCampeonato, g) })));
 }
 
 /** Ranking de artilheiros do campeonato. */
-function artilheiros(idCampeonato) {
-  return db.prepare(`
+async function artilheiros(idCampeonato) {
+  const linhas = await db.prepare(`
     SELECT j.id AS id_jogador, j.nome, j.numero, t.id AS id_time, t.nome AS time,
            SUM(g.quantidade) AS gols
     FROM gols g
@@ -154,7 +155,8 @@ function artilheiros(idCampeonato) {
     WHERE p.id_campeonato = ?
     GROUP BY j.id
     ORDER BY gols DESC, j.nome ASC
-  `).all(idCampeonato).map((linha, i) => ({ posicao: i + 1, ...linha }));
+  `).all(idCampeonato);
+  return linhas.map((linha, i) => ({ posicao: i + 1, ...linha }));
 }
 
 module.exports = { classificacao, classificacaoDoGrupo, artilheiros };

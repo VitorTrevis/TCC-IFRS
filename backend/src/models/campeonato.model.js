@@ -10,13 +10,16 @@ const listar = () => db.prepare(`
 
 const porId = (id) => db.prepare('SELECT * FROM campeonatos WHERE id = ?').get(id);
 
-const criar = (d) => db.prepare(`
-  INSERT INTO campeonatos
-    (nome, modalidade, formato, turno_returno, tamanho_grupo, classificados_grupo,
-     data_inicio, data_fim, status)
-  VALUES (@nome, @modalidade, @formato, @turno_returno, @tamanho_grupo, @classificados_grupo,
-          @data_inicio, @data_fim, @status)
-`).run(d).lastInsertRowid;
+const criar = async (d) => {
+  const r = await db.prepare(`
+    INSERT INTO campeonatos
+      (nome, modalidade, formato, turno_returno, tamanho_grupo, classificados_grupo,
+       data_inicio, data_fim, status)
+    VALUES (@nome, @modalidade, @formato, @turno_returno, @tamanho_grupo, @classificados_grupo,
+            @data_inicio, @data_fim, @status)
+  `).run(d);
+  return r.lastInsertRowid;
+};
 
 const atualizar = (id, d) => db.prepare(`
   UPDATE campeonatos SET

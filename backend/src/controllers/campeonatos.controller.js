@@ -55,76 +55,76 @@ function validar(corpo, parcialDe = null) {
   };
 }
 
-function buscarOuFalhar(id) {
-  const c = Campeonato.porId(id);
+async function buscarOuFalhar(id) {
+  const c = await Campeonato.porId(id);
   if (!c) falha(404, 'Campeonato não encontrado.');
   return c;
 }
 
-const listar = (req, res) => res.json(Campeonato.listar());
+const listar = async (req, res) => res.json(await Campeonato.listar());
 
-const detalhar = (req, res) => res.json(buscarOuFalhar(req.params.id));
+const detalhar = async (req, res) => res.json(await buscarOuFalhar(req.params.id));
 
-function criar(req, res) {
+async function criar(req, res) {
   const dados = validar(req.body);
-  const id = Campeonato.criar(dados);
-  Historico.registrar({
+  const id = await Campeonato.criar(dados);
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'criar', entidade: 'campeonato', entidade_id: id,
     descricao: `criou o campeonato "${dados.nome}"`
   });
-  res.status(201).json(Campeonato.porId(id));
+  res.status(201).json(await Campeonato.porId(id));
 }
 
-function atualizar(req, res) {
-  const atual = buscarOuFalhar(req.params.id);
+async function atualizar(req, res) {
+  const atual = await buscarOuFalhar(req.params.id);
   const dados = validar(req.body, atual);
 
   if (dados.formato !== atual.formato) {
-    const jogos = Partida.listarPorCampeonato(atual.id).length;
+    const jogos = (await Partida.listarPorCampeonato(atual.id)).length;
     if (jogos > 0) {
       falha(400, 'A tabela de jogos já existe. Gere a tabela de novo depois de trocar o formato.');
     }
   }
-  Campeonato.atualizar(atual.id, dados);
-  Historico.registrar({
+  await Campeonato.atualizar(atual.id, dados);
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'editar', entidade: 'campeonato', entidade_id: atual.id,
     descricao: `editou o campeonato "${dados.nome}"`
   });
-  res.json(Campeonato.porId(atual.id));
+  res.json(await Campeonato.porId(atual.id));
 }
 
-function remover(req, res) {
-  const atual = buscarOuFalhar(req.params.id);
-  Campeonato.remover(req.params.id);
-  Historico.registrar({
+async function remover(req, res) {
+  const atual = await buscarOuFalhar(req.params.id);
+  await Campeonato.remover(req.params.id);
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'remover', entidade: 'campeonato', entidade_id: atual.id,
     descricao: `excluiu o campeonato "${atual.nome}"`
   });
   res.status(204).end();
 }
 
-function gerar(req, res) {
-  const campeonato = buscarOuFalhar(req.params.id);
-  const resumo = gerarTabela(campeonato);
-  Historico.registrar({
+async function gerar(req, res) {
+  const campeonato = await buscarOuFalhar(req.params.id);
+  const resumo = await gerarTabela(campeonato);
+  await Historico.registrar({
     nome: req.admin.nome, acao: 'gerar_tabela', entidade: 'campeonato', entidade_id: campeonato.id,
     descricao: `gerou a tabela de jogos de "${campeonato.nome}"`
   });
   res.status(201).json({
     mensagem: 'Tabela de jogos gerada.',
     resumo,
-    partidas: Partida.listarPorCampeonato(campeonato.id)
+    partidas: await Partida.listarPorCampeonato(campeonato.id)
   });
 }
 
-function verClassificacao(req, res) {
-  const campeonato = buscarOuFalhar(req.params.id);
-  res.json(classificacao(campeonato.id));
+async function verClassificacao(req, res) {
+  const campeonato = await buscarOuFalhar(req.params.id);
+  res.json(await classificacao(campeonato.id));
 }
 
-function verArtilheiros(req, res) {
-  const campeonato = buscarOuFalhar(req.params.id);
-  res.json(artilheiros(campeonato.id));
+async function verArtilheiros(req, res) {
+  const campeonato = await buscarOuFalhar(req.params.id);
+  res.json(await artilheiros(campeonato.id));
 }
 
 module.exports = {
