@@ -59,7 +59,7 @@ async function carregar() {
       ? campeonatos.map(cartao).join('')
       : `<div class="col-12"><div class="vazio">
            <strong>Nenhum campeonato por aqui ainda</strong>
-           Crie o primeiro para cadastrar os times e gerar a tabela de jogos.
+           ${Sessao.ehAdmin ? 'Crie o primeiro para cadastrar os times e gerar a tabela de jogos.' : 'Assim que a coordenação criar um, ele aparece aqui.'}
          </div></div>`;
   } catch (e) {
     lista.innerHTML = `<div class="col-12"><div class="vazio"><strong>Não deu para carregar</strong>${esc(e.message)}</div></div>`;
@@ -107,6 +107,7 @@ document.getElementById('btn-salvar-campeonato').onclick = () => comCarregamento
 });
 
 document.getElementById('btn-novo').innerHTML = `${icone('mais')}Criar campeonato`;
+document.getElementById('btn-novo').classList.toggle('d-none', !Sessao.ehAdmin);
 document.getElementById('marca-agua-capa').innerHTML = icone('trofeu');
 
 carregar();
